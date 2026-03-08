@@ -20,8 +20,7 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        button:active { transform: scale(0.95); }
-        .tab-active { color: #10b981; border-top: 2px solid #10b981; }
+        button:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
@@ -98,7 +97,6 @@
             const [memorizedAyahs, setMemorizedAyahs] = useState([]);
             const [selectedSurahForView, setSelectedSurahForView] = useState(null);
             const [librarySurahData, setLibrarySurahData] = useState([]);
-            const [isLibraryLoading, setIsLibraryLoading] = useState(false);
             const [isJumpModalOpen, setIsJumpModalOpen] = useState(false);
             const [isLowEnergyOpen, setIsLowEnergyOpen] = useState(false);
             const [learningContext, setLearningContext] = useState({ 
@@ -106,9 +104,9 @@
             });
 
             useEffect(() => {
-                const savedVault = localStorage.getItem('hifz_vault_gh_v3');
+                const savedVault = localStorage.getItem('hifz_vault_gh_v4');
                 if (savedVault) setLocalDatabase(JSON.parse(savedVault));
-                const savedProgress = localStorage.getItem('hifz_progress_gh_v3');
+                const savedProgress = localStorage.getItem('hifz_progress_gh_v4');
                 if (savedProgress) setMemorizedAyahs(JSON.parse(savedProgress));
             }, []);
 
@@ -143,8 +141,6 @@
                                 setSelectedSurahForView={setSelectedSurahForView}
                                 librarySurahData={librarySurahData}
                                 setLibrarySurahData={setLibrarySurahData}
-                                loading={isLibraryLoading}
-                                setLoading={setIsLibraryLoading}
                                 onSelectVerse={handleSelectVerse}
                             />}
                             {activeTab === 'memorize' && <Memorize context={learningContext} setContext={setLearningContext} memorizedAyahs={memorizedAyahs} setMemorizedAyahs={setMemorizedAyahs}/>}
@@ -199,9 +195,9 @@
 
         function FabActionItem({ icon, label, onClick, color }) {
             return (
-                <button onClick={onClick} className="flex items-center gap-3">
+                <button onClick={onClick} className="flex items-center gap-3 group">
                     <span className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-md border dark:border-slate-700 uppercase tracking-tighter">{label}</span>
-                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border dark:border-slate-700">
+                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border dark:border-slate-700 transition-colors group-hover:border-emerald-500">
                         <LucideIcon name={icon} className={`w-5 h-5 ${color}`} />
                     </div>
                 </button>
@@ -209,24 +205,25 @@
         }
 
         function Dashboard({ localDatabase, memorizedAyahs }) {
-            const stats = ((memorizedAyahs.length / 6236) * 100).toFixed(1);
+            const memorizedCount = Array.isArray(memorizedAyahs) ? memorizedAyahs.length : 0;
+            const stats = ((memorizedCount / 6236) * 100).toFixed(1);
             return (
                 <div className="space-y-6 animate-in">
                     <div className="bg-gradient-to-br from-emerald-600 to-emerald-900 p-8 rounded-3xl text-white text-center shadow-xl relative overflow-hidden">
-                        <h2 className="text-sm font-medium uppercase tracking-widest opacity-80 mb-4">Total Progress</h2>
+                        <h2 className="text-sm font-medium uppercase tracking-widest opacity-80 mb-4">Mastery</h2>
                         <div className="w-44 h-44 mx-auto rounded-full border-8 border-white/20 flex flex-col items-center justify-center">
                             <span className="text-5xl font-black">{stats}%</span>
                             <span className="text-[10px] opacity-60 uppercase mt-1">Memorized</span>
                         </div>
                     </div>
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
-                        <h3 className="font-bold mb-4 flex items-center gap-2 uppercase text-xs tracking-widest opacity-60">Offline Vault</h3>
+                        <h3 className="font-bold mb-4 flex items-center gap-2 uppercase text-xs tracking-widest opacity-60">Vault Status</h3>
                         <div className="flex justify-between text-xs font-bold text-stone-500 uppercase mb-2">
-                            <span>Downloaded Packs</span>
-                            <span>{localDatabase.length} / 114</span>
+                            <span>Surah Packs</span>
+                            <span>{localDatabase?.length || 0} / 114</span>
                         </div>
                         <div className="w-full bg-stone-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                            <div className="bg-emerald-500 h-full" style={{width: `${(localDatabase.length/114)*100}%`}}></div>
+                            <div className="bg-emerald-500 h-full" style={{width: `${((localDatabase?.length || 0)/114)*100}%`}}></div>
                         </div>
                     </div>
                 </div>
@@ -240,47 +237,43 @@
             const [len, setLen] = useState('mixed');
             const [playingId, setPlayingId] = useState(null);
             const [dynamicWords, setDynamicWords] = useState([]);
-            const alphabet = "ابتثجحخدذرزسشصضطظعغفقكلمنهويء".split("");
+
+            const FULL_ALPHABET = [
+                { letter: "ا", name: "Alif" }, { letter: "ب", name: "Baa" }, { letter: "ت", name: "Taa" }, { letter: "ث", name: "Thaa" }, 
+                { letter: "ج", name: "Jeem" }, { letter: "ح", name: "Haa" }, { letter: "خ", name: "Khaa" }, { letter: "د", name: "Daal" }, 
+                { letter: "ذ", name: "Thaal" }, { letter: "ر", name: "Raa" }, { letter: "ز", name: "Zaa" }, { letter: "س", name: "Seen" }, 
+                { letter: "ش", name: "Sheen" }, { letter: "ص", name: "Saad" }, { letter: "ض", name: "Dhaad" }, { letter: "ط", name: "Taa" }, 
+                { letter: "ظ", name: "Zhaa" }, { letter: "ع", name: "Ayn" }, { letter: "غ", name: "Ghayn" }, { letter: "ف", name: "Faa" }, 
+                { letter: "ق", name: "Qaaf" }, { letter: "ك", name: "Kaaf" }, { letter: "ل", name: "Laam" }, { letter: "م", name: "Meem" }, 
+                { letter: "ن", name: "Noon" }, { letter: "ه", name: "Haa" }, { letter: "و", name: "Waaw" }, { letter: "ي", name: "Yaa" }, 
+                { letter: "ء", name: "Hamza" }
+            ];
 
             const playAudio = (txt, id) => {
                 setPlayingId(id);
-                const isCloud = source === 'cloud';
-                
-                const playDirect = () => {
-                    if (isCloud) {
-                        const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(txt)}`);
-                        if (gender === 'male') { audio.playbackRate = 0.9; if ('preservesPitch' in audio) audio.preservesPitch = false; }
-                        audio.onended = () => setPlayingId(null);
-                        audio.play().catch(() => setPlayingId(null));
-                    } else {
-                        window.speechSynthesis.cancel();
-                        const u = new SpeechSynthesisUtterance(txt);
-                        u.lang = 'ar-SA';
-                        const vList = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ar'));
-                        if (vList.length > 0) {
-                            const maleNames = ['tariq', 'maged', 'hamid'];
-                            const femaleNames = ['laila', 'hoda', 'salma'];
-                            u.voice = gender === 'male' ? 
-                                (vList.find(v => maleNames.some(n => v.name.toLowerCase().includes(n))) || vList[0]) :
-                                (vList.find(v => femaleNames.some(n => v.name.toLowerCase().includes(n))) || vList[vList.length-1]);
-                            u.pitch = gender === 'male' ? 0.9 : 1.1;
-                            u.rate = 1.0;
-                            u.onend = () => setPlayingId(null);
-                            window.speechSynthesis.speak(u);
-                        } else {
-                            // Fallback to cloud MP3 if no local voices
-                            const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(txt)}`);
-                            audio.onended = () => setPlayingId(null);
-                            audio.play();
-                        }
+                if (source === 'cloud') {
+                    const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(txt)}`);
+                    if (gender === 'male') {
+                        audio.playbackRate = 0.9;
+                        if ('preservesPitch' in audio) audio.preservesPitch = false;
                     }
-                };
-                playDirect();
+                    audio.onended = () => setPlayingId(null);
+                    audio.play().catch(() => setPlayingId(null));
+                } else {
+                    if (!window.speechSynthesis) { setPlayingId(null); return; }
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(txt);
+                    u.lang = 'ar-SA';
+                    u.pitch = gender === 'male' ? 0.9 : 1.15;
+                    u.rate = 1.0;
+                    u.onend = () => setPlayingId(null);
+                    window.speechSynthesis.speak(u);
+                }
             };
 
             useEffect(() => {
                 if (section !== 'words') return;
-                const baseline = ["قُلْ", "رَبِّ", "أَحَدٌ", "الصَّمَدُ", "الْمُسْتَقِيمَ", "الْعَالَمِينَ"];
+                const baseline = ["قُلْ", "رَبِّ", "أَحَدٌ", "الصَّمَدُ", "الْمُسْتَقِيمَ", "الْعَالَمِينَ", "مَالِكِ", "إِلَٰهِ"];
                 let raw = [...baseline];
                 const sourceData = (localDatabase && localDatabase.length > 0) ? localDatabase : [{ayahs: OFFLINE_PACK["1"]}];
                 sourceData.forEach(s => s?.ayahs?.forEach(a => a.arabic && (raw = [...raw, ...a.arabic.split(' ')])));
@@ -303,15 +296,15 @@
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700">
-                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase text-center tracking-widest">Voice Gender</p>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
+                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-widest">Voice</p>
                             <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
                                 <button onClick={() => setGender('male')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${gender === 'male' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Male</button>
                                 <button onClick={() => setGender('female')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${gender === 'female' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Female</button>
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700">
-                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase text-center tracking-widest">Audio Source</p>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
+                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-widest">Source</p>
                             <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
                                 <button onClick={() => setSource('local')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${source === 'local' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Local</button>
                                 <button onClick={() => setSource('cloud')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${source === 'cloud' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Cloud</button>
@@ -320,10 +313,11 @@
                     </div>
 
                     {section === 'letters' && (
-                        <div className="grid grid-cols-4 gap-2 bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 shadow-sm">
-                            {alphabet.map((l, i) => (
-                                <button key={i} onClick={() => playAudio(l, i)} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all ${playingId === i ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
-                                    <span className="text-3xl font-naskh">{l}</span>
+                        <div className="grid grid-cols-3 gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 shadow-sm">
+                            {FULL_ALPHABET.map((item, i) => (
+                                <button key={i} onClick={() => playAudio(item.letter, i)} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all ${playingId === i ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
+                                    <span className="text-4xl font-naskh mb-1">{item.letter}</span>
+                                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">{item.name}</span>
                                 </button>
                             ))}
                         </div>
@@ -333,13 +327,13 @@
                         <div className="space-y-4">
                             <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border dark:border-slate-700 shadow-sm">
                                 {['short', 'medium', 'long', 'mixed'].map(lv => (
-                                    <button key={lv} onClick={() => setLen(lv)} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg capitalize ${len === lv ? 'bg-emerald-600 text-white' : 'text-stone-400'}`}>{lv}</button>
+                                    <button key={lv} onClick={() => setLen(lv)} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg capitalize ${len === lv ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-400'}`}>{lv}</button>
                                 ))}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 {dynamicWords.map((w, i) => (
-                                    <button key={i} onClick={() => playAudio(w, `w${i}`)} className={`py-8 rounded-2xl border flex items-center justify-center transition-all ${playingId === `w${i}` ? 'bg-amber-100 border-amber-400 dark:bg-amber-900' : 'bg-white dark:bg-slate-800 dark:border-slate-700'}`}>
-                                        <span className="text-3xl font-naskh">{w}</span>
+                                    <button key={i} onClick={() => playAudio(w, `w${i}`)} className={`py-8 rounded-2xl border flex items-center justify-center transition-all ${playingId === `w${i}` ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600' : 'bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm'}`}>
+                                        <span className="text-4xl font-naskh">{w}</span>
                                     </button>
                                 ))}
                             </div>
@@ -351,7 +345,7 @@
                             {[{t:"Fatha (ـَ)", e:"بَ"}, {t:"Kasra (ـِ)", e:"بِ"}, {t:"Damma (ـُ)", e:"بُ"}, {t:"Sukun (ـْ)", e:"بْ"}].map((r, i) => (
                                 <div key={i} className="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
                                     <span className="font-bold text-sm">{r.t}</span>
-                                    <button onClick={() => playAudio(r.e, `r${i}`)} className={`w-12 h-12 rounded-lg border flex items-center justify-center text-2xl font-naskh ${playingId === `r${i}` ? 'bg-emerald-100 border-emerald-500 text-emerald-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>{r.e}</button>
+                                    <button onClick={() => playAudio(r.e, `r${i}`)} className={`w-14 h-14 rounded-lg border flex items-center justify-center text-3xl font-naskh transition-all ${playingId === `r${i}` ? 'bg-emerald-100 border-emerald-500 text-emerald-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700 shadow-sm'}`}>{r.e}</button>
                                 </div>
                             ))}
                         </div>
@@ -389,7 +383,7 @@
                             const idx = merged.findIndex(s => s.id === ns.id);
                             if (idx >= 0) merged[idx] = ns; else merged.push(ns);
                         });
-                        localStorage.setItem('hifz_vault_gh_v3', JSON.stringify(merged));
+                        localStorage.setItem('hifz_vault_gh_v4', JSON.stringify(merged));
                         return merged;
                     });
                 }
@@ -404,7 +398,7 @@
                         </button>
                         <div className="text-center">
                             <h2 className="text-2xl font-bold dark:text-white">Surah {selectedSurahForView.name}</h2>
-                            <p className="text-stone-500 text-sm uppercase tracking-widest">{selectedSurahForView.english}</p>
+                            <p className="text-stone-500 text-xs uppercase tracking-widest">{selectedSurahForView.english}</p>
                         </div>
                         {librarySurahData.map((v, idx) => (
                             <div key={idx} className="p-5 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm relative group">
@@ -423,7 +417,7 @@
                                 <div className="absolute -left-2 -top-2 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs border dark:border-emerald-700 shadow-sm">
                                     {v.ayah}
                                 </div>
-                                <p className="text-3xl font-naskh text-right leading-relaxed mb-4 mt-2" dir="rtl">{v.arabic}</p>
+                                <p className="text-4xl font-naskh text-right leading-relaxed mb-4 mt-2" dir="rtl">{v.arabic}</p>
                                 <div className="p-3 bg-stone-50 dark:bg-slate-900/50 rounded-lg border dark:border-slate-700 text-[11px] text-emerald-600 dark:text-emerald-400 italic mb-3">
                                     {v.transliteration}
                                 </div>
@@ -440,15 +434,15 @@
                     <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
                         <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-widest opacity-60">Vault Manager</h3>
                         <input type="file" accept=".json" multiple ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-lg font-bold text-xs">Add Pack</button>
+                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-lg font-bold text-xs transition-colors hover:bg-emerald-900/60">Add Pack</button>
                     </div>
                     <div className="space-y-2">
                         {SURAHS.map(s => (
-                            <div key={s.id} onClick={() => loadSurah(s.id)} className="p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 flex justify-between items-center shadow-sm hover:border-emerald-500 cursor-pointer group">
+                            <div key={s.id} onClick={() => loadSurah(s.id)} className="p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 flex justify-between items-center shadow-sm hover:border-emerald-500 cursor-pointer group transition-all">
                                 <div><p className="font-bold group-hover:text-emerald-500 transition-colors">{s.id}. {s.name}</p><p className="text-xs text-stone-500">{s.english}</p></div>
                                 <div className="flex gap-2 items-center">
                                     {(localDatabase && localDatabase.some(ls => ls.id === s.id) || OFFLINE_PACK[s.id]) && <LucideIcon name="check-circle-2" className="w-4 h-4 text-emerald-500" />}
-                                    <LucideIcon name="chevron-right" className="w-5 h-5 text-stone-300" />
+                                    <LucideIcon name="chevron-right" className="w-5 h-5 text-stone-300 transition-transform group-hover:translate-x-1" />
                                 </div>
                             </div>
                         ))}
@@ -467,19 +461,20 @@
             useEffect(() => { setStep(1); setReps(0); }, [context.verse.ayah]);
 
             const handleRep = (e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Stop bubbling to prevent app-level menu interference
                 if (reps + 1 >= target) {
                     if (step < 4) { setStep(step + 1); setReps(0); }
                     else setReps(target);
                 } else setReps(reps + 1);
             };
 
-            const log = () => {
+            const log = (e) => {
+                e.stopPropagation();
                 const key = `${context.surahInfo.id}:${context.verse.ayah}`;
                 if (!memorizedAyahs.includes(key)) {
                     const next = [...memorizedAyahs, key];
                     setMemorizedAyahs(next);
-                    localStorage.setItem('hifz_progress_gh_v3', JSON.stringify(next));
+                    localStorage.setItem('hifz_progress_gh_v4', JSON.stringify(next));
                 }
                 if (context.currentIndex < context.surahData.length - 1) {
                     const nIdx = context.currentIndex + 1;
@@ -490,25 +485,25 @@
             return (
                 <div className="space-y-4 animate-in">
                     <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                        <button disabled={context.currentIndex === 0} onClick={() => { const i = context.currentIndex - 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-left"/></button>
+                        <button disabled={context.currentIndex === 0} onClick={(e) => { e.stopPropagation(); const i = context.currentIndex - 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-left"/></button>
                         <h2 className="text-sm font-bold opacity-60">Surah {context.surahInfo.name} • {context.verse.ayah}</h2>
-                        <button disabled={context.currentIndex === context.surahData.length - 1} onClick={() => { const i = context.currentIndex + 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-right"/></button>
+                        <button disabled={context.currentIndex === context.surahData.length - 1} onClick={(e) => { e.stopPropagation(); const i = context.currentIndex + 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-right"/></button>
                     </div>
                     <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-lg text-center relative overflow-hidden">
                         <p className="text-4xl font-naskh leading-relaxed mb-6" dir="rtl">{context.verse.arabic}</p>
                         <p className="text-emerald-500 italic text-sm mb-4">{context.verse.transliteration}</p>
-                        <p className="text-sm dark:text-slate-300">"{context.verse.english}"</p>
+                        <p className="text-sm dark:text-slate-300 leading-snug">"{context.verse.english}"</p>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                         {steps.map(s => (
-                            <div key={s.id} className={`py-2 text-[10px] font-bold text-center rounded-lg border transition-all ${step === s.id ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-white dark:bg-slate-800 border-stone-200 dark:border-slate-700 opacity-40'}`}>
+                            <div key={s.id} className={`py-2 text-[10px] font-bold text-center rounded-lg border transition-all ${step === s.id ? 'bg-emerald-600 text-white border-emerald-500 shadow-md scale-105' : 'bg-white dark:bg-slate-800 border-stone-200 dark:border-slate-700 opacity-40'}`}>
                                 {s.t}
                             </div>
                         ))}
                     </div>
                     <div className="flex gap-4">
                         <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex items-center justify-center text-2xl font-black">{reps}/{target}</div>
-                        <button onClick={handleRep} className="flex-[3] py-6 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-all text-lg">Log Repetition</button>
+                        <button onClick={handleRep} className="flex-[3] py-6 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-all text-lg border border-emerald-500">Log Repetition</button>
                     </div>
                     {isDone && <button onClick={log} className="w-full py-5 bg-emerald-800 text-white rounded-2xl font-bold animate-bounce shadow-2xl flex items-center justify-center gap-2 mt-4"><LucideIcon name="check-circle-2"/> Save Ayah & Next</button>}
                 </div>
@@ -530,14 +525,14 @@
             return (
                 <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in" onClick={onClose}>
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl border dark:border-slate-700" onClick={e=>e.stopPropagation()}>
-                        <h3 className="text-xl font-bold mb-6 text-center border-b dark:border-slate-700 pb-2">Jump to Ayah</h3>
+                        <h3 className="text-xl font-bold mb-6 text-center border-b dark:border-slate-700 pb-2 uppercase tracking-widest opacity-60">Jump to Ayah</h3>
                         <div className="space-y-4 mb-8">
-                            <div><label className="text-[10px] font-bold text-stone-500 uppercase px-2 tracking-widest">Surah Number</label><input type="number" value={s} onChange={e=>setS(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-4 outline-none border border-transparent focus:border-emerald-500" /></div>
-                            <div><label className="text-[10px] font-bold text-stone-500 uppercase px-2 tracking-widest">Ayah Number</label><input type="number" value={a} onChange={e=>setA(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-4 outline-none border border-transparent focus:border-emerald-500" /></div>
+                            <div><label className="text-[10px] font-bold text-stone-500 uppercase px-2 tracking-widest">Surah Number</label><input type="number" value={s} onChange={e=>setS(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-4 outline-none border border-transparent focus:border-emerald-500 text-lg dark:text-white" /></div>
+                            <div><label className="text-[10px] font-bold text-stone-500 uppercase px-2 tracking-widest">Ayah Number</label><input type="number" value={a} onChange={e=>setA(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-4 outline-none border border-transparent focus:border-emerald-500 text-lg dark:text-white" /></div>
                         </div>
                         <div className="flex gap-3">
-                            <button onClick={onClose} className="flex-1 py-4 font-bold bg-stone-100 dark:bg-slate-700 rounded-xl">Cancel</button>
-                            <button onClick={handle} className="flex-1 py-4 font-bold bg-emerald-600 text-white rounded-xl">Teleport</button>
+                            <button onClick={onClose} className="flex-1 py-4 font-bold bg-stone-100 dark:bg-slate-700 rounded-xl uppercase tracking-tighter text-xs">Cancel</button>
+                            <button onClick={handle} className="flex-1 py-4 font-bold bg-emerald-600 text-white rounded-xl uppercase tracking-tighter text-xs shadow-lg">Teleport</button>
                         </div>
                     </div>
                 </div>
@@ -554,11 +549,11 @@
                     <div className="bg-slate-950 p-6 rounded-t-3xl border-t border-slate-800 relative shadow-2xl">
                         <div className="flex justify-between items-center mb-6">
                             <div><h2 className="text-2xl font-bold uppercase tracking-widest">Low Energy</h2><p className="text-stone-500 text-[10px] uppercase tracking-widest">Focusing: {context?.surahInfo?.name}</p></div>
-                            <button onClick={onClose} className="p-2 bg-slate-900 rounded-full"><LucideIcon name="chevron-down"/></button>
+                            <button onClick={onClose} className="p-2 bg-slate-900 rounded-full transition-transform active:scale-90"><LucideIcon name="chevron-down"/></button>
                         </div>
                         <div className="bg-slate-900 p-8 rounded-2xl mb-6 flex justify-between items-center shadow-inner">
                             <div className="text-5xl font-mono font-bold text-amber-400">{Math.floor(t/60)}:{(t%60).toString().padStart(2,'0')}</div>
-                            <button onClick={() => setActive(!active)} className="w-16 h-16 bg-amber-600 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">{active ? <LucideIcon name="pause" /> : <LucideIcon name="play" />}</button>
+                            <button onClick={() => setActive(!active)} className="w-16 h-16 bg-amber-600 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">{active ? <LucideIcon name="pause" /> : <LucideIcon name="play" className="ml-1" />}</button>
                         </div>
                         <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800"><p className="text-3xl font-naskh text-center leading-loose" dir="rtl">{context?.verse?.arabic}</p></div>
                     </div>
