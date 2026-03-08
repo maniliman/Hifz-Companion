@@ -1,641 +1,573 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  BookOpen, 
-  BatteryLow, 
-  CheckCircle2, 
-  Play, 
-  Pause, 
-  ChevronRight, 
-  ChevronLeft, 
-  ChevronDown, 
-  Book, 
-  ArrowLeft, 
-  Loader2, 
-  Search, 
-  Zap, 
-  ArrowRight, 
-  Moon, 
-  Sun, 
-  WifiOff, 
-  RotateCcw, 
-  RefreshCw, 
-  Database, 
-  UploadCloud, 
-  PieChart, 
-  Target, 
-  Type, 
-  Volume2, 
-  SkipForward, 
-  Shuffle, 
-  Filter, 
-  Menu, 
-  X, 
-  MoreHorizontal,
-  Cloud,
-  Smartphone,
-  Info
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hifz Companion</title>
+    <!-- React, Babel, and Tailwind CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+        .font-naskh { font-family: 'Amiri', serif; line-height: 2.2; }
+        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        button:active { transform: scale(0.95); }
+        .tab-active { color: #10b981; border-top: 2px solid #10b981; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-// --- METADATA ---
-const SURAHS = [
-  { id: 1, name: "Al-Fatihah", english: "The Opener", phase: "Phase 1: Foundation" },
-  { id: 67, name: "Al-Mulk", english: "The Sovereignty", phase: "Phase 2: Daily Protectors" },
-  { id: 78, name: "An-Naba", english: "The Tidings", phase: "Phase 1: Foundation" },
-  { id: 79, name: "An-Nazi'at", english: "Those who drag forth", phase: "Phase 1: Foundation" },
-  { id: 80, name: "'Abasa", english: "He Frowned", phase: "Phase 1: Foundation" },
-  { id: 81, name: "At-Takwir", english: "The Overthrowing", phase: "Phase 1: Foundation" },
-  { id: 82, name: "Al-Infitar", english: "The Cleaving", phase: "Phase 1: Foundation" },
-  { id: 83, name: "Al-Mutaffifin", english: "The Defrauding", phase: "Phase 1: Foundation" },
-  { id: 84, name: "Al-Inshiqaq", english: "The Sundering", phase: "Phase 1: Foundation" },
-  { id: 85, name: "Al-Buruj", english: "The Mansions of the Stars", phase: "Phase 1: Foundation" },
-  { id: 86, name: "At-Tariq", english: "The Nightcommer", phase: "Phase 1: Foundation" },
-  { id: 87, name: "Al-A'la", english: "The Most High", phase: "Phase 1: Foundation" },
-  { id: 88, name: "Al-Ghashiyah", english: "The Overwhelming", phase: "Phase 1: Foundation" },
-  { id: 89, name: "Al-Fajr", english: "The Dawn", phase: "Phase 1: Foundation" },
-  { id: 90, name: "Al-Balad", english: "The City", phase: "Phase 1: Foundation" },
-  { id: 91, name: "Ash-Shams", english: "The Sun", phase: "Phase 1: Foundation" },
-  { id: 92, name: "Al-Layl", english: "The Night", phase: "Phase 1: Foundation" },
-  { id: 93, name: "Ad-Duhaa", english: "The Morning Hours", phase: "Phase 1: Foundation" },
-  { id: 94, name: "Ash-Sharh", english: "The Relief", phase: "Phase 1: Foundation" },
-  { id: 95, name: "At-Tin", english: "The Fig", phase: "Phase 1: Foundation" },
-  { id: 96, name: "Al-'Alaq", english: "The Clot", phase: "Phase 1: Foundation" },
-  { id: 97, name: "Al-Qadr", english: "The Power", phase: "Phase 1: Foundation" },
-  { id: 98, name: "Al-Bayyinah", english: "The Clear Proof", phase: "Phase 1: Foundation" },
-  { id: 99, name: "Az-Zalzalah", english: "The Earthquake", phase: "Phase 1: Foundation" },
-  { id: 100, name: "Al-'Adiyat", english: "The Courser", phase: "Phase 1: Foundation" },
-  { id: 101, name: "Al-Qari'ah", english: "The Calamity", phase: "Phase 1: Foundation" },
-  { id: 102, name: "At-Takathur", english: "The Rivalry in world increase", phase: "Phase 1: Foundation" },
-  { id: 103, name: "Al-'Asr", english: "The Declining Day", phase: "Phase 1: Foundation" },
-  { id: 104, name: "Al-Humazah", english: "The Traducer", phase: "Phase 1: Foundation" },
-  { id: 105, name: "Al-Fil", english: "The Elephant", phase: "Phase 1: Foundation" },
-  { id: 106, name: "Quraysh", english: "Quraysh", phase: "Phase 1: Foundation" },
-  { id: 107, name: "Al-Ma'un", english: "Small Kindnesses", phase: "Phase 1: Foundation" },
-  { id: 108, name: "Al-Kawthar", english: "Abundance", phase: "Phase 1: Foundation" },
-  { id: 109, name: "Al-Kafirun", english: "The Disbelievers", phase: "Phase 1: Foundation" },
-  { id: 110, name: "An-Nasr", english: "Divine Support", phase: "Phase 1: Foundation" },
-  { id: 111, name: "Al-Masad", english: "The Palm Fiber", phase: "Phase 1: Foundation" },
-  { id: 112, name: "Al-Ikhlas", english: "The Sincerity", phase: "Phase 1: Foundation" },
-  { id: 113, name: "Al-Falaq", english: "The Daybreak", phase: "Phase 1: Foundation" },
-  { id: 114, name: "An-Nas", english: "Mankind", phase: "Phase 1: Foundation" }
-];
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        // Icon component that ensures Lucide icons render correctly
+        const LucideIcon = ({ name, className = "w-6 h-6" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className}></i>;
+        };
 
-const OFFLINE_PACK = {
-  "1": [
-    { ayah: 1, arabic: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Bismillaahir Rahmaanir Raheem", english: "In the name of Allah, the Entirely Merciful, the Especially Merciful.", tafsir: "Invoke His mercy. This journey is fueled by His grace, not just your effort." },
-    { ayah: 2, arabic: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", transliteration: "Alhamdu lillaahi Rabbil 'aalameen", english: "[All] praise is [due] to Allah, Lord of the worlds -", tafsir: "Gratitude for the past and present. He sustains your life, career, and family." },
-    { ayah: 3, arabic: "الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Ar-Rahmaanir-Raheem", english: "The Entirely Merciful, the Especially Merciful,", tafsir: "Repeated for emphasis. His mercy encompasses all of creation." },
-    { ayah: 4, arabic: "مَالِكِ يَوْمِ الدِّينِ", transliteration: "Maaliki Yawmid-Deen", english: "Sovereign of the Day of Recompense.", tafsir: "A reminder of ultimate accountability. All corporate titles and worldly statuses fade; only His sovereignty remains." },
-    { ayah: 5, arabic: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", transliteration: "Iyyaaka na'budu wa lyyaaka nasta'een", english: "It is You we worship and You we ask for help.", tafsir: "The core of the Qur'an. You declare total dependence. You cannot memorize this Book without His direct assistance." },
-    { ayah: 6, arabic: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", transliteration: "Ihdinas-Siraatal-Mustaqeem", english: "Guide us to the straight path -", tafsir: "Guidance isn't a one-time event; it's a daily requirement, like water." },
-    { ayah: 7, arabic: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", transliteration: "Siraatal-lazeena an'amta 'alaihim ghayril-maghdoobi 'alaihim wa lad-daaalleen", english: "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.", tafsir: "You are asking to join the ranks of the Prophets and the righteous, avoiding the paths of arrogance or ignorance." }
-  ]
-};
+        const SURAHS = [
+            { id: 1, name: "Al-Fatihah", english: "The Opener", phase: "Phase 1" },
+            { id: 67, name: "Al-Mulk", english: "The Sovereignty", phase: "Phase 2" },
+            { id: 78, name: "An-Naba", english: "The Tidings", phase: "Phase 1" },
+            { id: 79, name: "An-Nazi'at", english: "Those who drag forth", phase: "Phase 1" },
+            { id: 80, name: "'Abasa", english: "He Frowned", phase: "Phase 1" },
+            { id: 81, name: "At-Takwir", english: "The Overthrowing", phase: "Phase 1" },
+            { id: 82, name: "Al-Infitar", english: "The Cleaving", phase: "Phase 1" },
+            { id: 83, name: "Al-Mutaffifin", english: "The Defrauding", phase: "Phase 1" },
+            { id: 84, name: "Al-Inshiqaq", english: "The Sundering", phase: "Phase 1" },
+            { id: 85, name: "Al-Buruj", english: "The Mansions", phase: "Phase 1" },
+            { id: 86, name: "At-Tariq", english: "The Nightcommer", phase: "Phase 1" },
+            { id: 87, name: "Al-A'la", english: "The Most High", phase: "Phase 1" },
+            { id: 88, name: "Al-Ghashiyah", english: "The Overwhelming", phase: "Phase 1" },
+            { id: 89, name: "Al-Fajr", english: "The Dawn", phase: "Phase 1" },
+            { id: 90, name: "Al-Balad", english: "The City", phase: "Phase 1" },
+            { id: 91, name: "Ash-Shams", english: "The Sun", phase: "Phase 1" },
+            { id: 92, name: "Al-Layl", english: "The Night", phase: "Phase 1" },
+            { id: 93, name: "Ad-Duhaa", english: "The Morning Hours", phase: "Phase 1" },
+            { id: 94, name: "Ash-Sharh", english: "The Relief", phase: "Phase 1" },
+            { id: 95, name: "At-Tin", english: "The Fig", phase: "Phase 1" },
+            { id: 96, name: "Al-'Alaq", english: "The Clot", phase: "Phase 1" },
+            { id: 97, name: "Al-Qadr", english: "The Power", phase: "Phase 1" },
+            { id: 98, name: "Al-Bayyinah", english: "The Clear Proof", phase: "Phase 1" },
+            { id: 99, name: "Az-Zalzalah", english: "The Earthquake", phase: "Phase 1" },
+            { id: 100, name: "Al-'Adiyat", english: "The Courser", phase: "Phase 1" },
+            { id: 101, name: "Al-Qari'ah", english: "The Calamity", phase: "Phase 1" },
+            { id: 102, name: "At-Takathur", english: "Worldly Increase", phase: "Phase 1" },
+            { id: 103, name: "Al-'Asr", english: "The Declining Day", phase: "Phase 1" },
+            { id: 104, name: "Al-Humazah", english: "The Traducer", phase: "Phase 1" },
+            { id: 105, name: "Al-Fil", english: "The Elephant", phase: "Phase 1" },
+            { id: 106, name: "Quraysh", english: "Quraysh", phase: "Phase 1" },
+            { id: 107, name: "Al-Ma'un", english: "Small Kindnesses", phase: "Phase 1" },
+            { id: 108, name: "Al-Kawthar", english: "Abundance", phase: "Phase 1" },
+            { id: 109, name: "Al-Kafirun", english: "The Disbelievers", phase: "Phase 1" },
+            { id: 110, name: "An-Nasr", english: "Divine Support", phase: "Phase 1" },
+            { id: 111, name: "Al-Masad", english: "The Palm Fiber", phase: "Phase 1" },
+            { id: 112, name: "Al-Ikhlas", english: "The Sincerity", phase: "Phase 1" },
+            { id: 113, name: "Al-Falaq", english: "The Daybreak", phase: "Phase 1" },
+            { id: 114, name: "An-Nas", english: "Mankind", phase: "Phase 1" }
+        ];
 
-const DEFAULT_CONTEXT = {
-  surahInfo: { name: "Al-Fatihah", english: "The Opener", id: 1 },
-  verse: OFFLINE_PACK["1"][0],
-  surahData: OFFLINE_PACK["1"],
-  currentIndex: 0
-};
+        const OFFLINE_PACK = {
+            "1": [
+                { ayah: 1, arabic: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Bismillaahir Rahmaanir Raheem", english: "In the name of Allah, the Entirely Merciful, the Especially Merciful.", tafsir: "Invoke His mercy. This journey is fueled by His grace." },
+                { ayah: 2, arabic: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", transliteration: "Alhamdu lillaahi Rabbil 'aalameen", english: "[All] praise is [due] to Allah, Lord of the worlds -", tafsir: "Gratitude for the past and present." },
+                { ayah: 3, arabic: "الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Ar-Rahmaanir-Raheem", english: "The Entirely Merciful, the Especially Merciful,", tafsir: "Repeated for emphasis." },
+                { ayah: 4, arabic: "مَالِكِ يَوْمِ الدِّينِ", transliteration: "Maaliki Yawmid-Deen", english: "Sovereign of the Day of Recompense.", tafsir: "Ultimate accountability." },
+                { ayah: 5, arabic: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", transliteration: "Iyyaaka na'budu wa lyyaaka nasta'een", english: "It is You we worship and You we ask for help.", tafsir: "Total dependence." },
+                { ayah: 6, arabic: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", transliteration: "Ihdinas-Siraatal-Mustaqeem", english: "Guide us to the straight path -", tafsir: "Daily requirement for direction." },
+                { ayah: 7, arabic: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", transliteration: "Siraatal-lazeena an'amta 'alaihim ghayril-maghdoobi 'alaihim wa lad-daaalleen", english: "The path of those upon whom You have bestowed favor...", tafsir: "The path of the Prophets." }
+            ]
+        };
 
-// --- MAIN APPLICATION ENTRY ---
-export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
-  const [theme, setTheme] = useState('dark');
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [learningContext, setLearningContext] = useState(DEFAULT_CONTEXT);
-  const [pacingMode, setPacingMode] = useState('standard');
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  
-  const [localDatabase, setLocalDatabase] = useState([]);
-  const [memorizedAyahs, setMemorizedAyahs] = useState([]); 
-  
-  // UI Control States
-  const [isFabOpen, setIsFabOpen] = useState(false);
-  const [isLowEnergyOpen, setIsLowEnergyOpen] = useState(false);
-  const [isJumpModalOpen, setIsJumpModalOpen] = useState(false);
-  
-  // Persistence for Library View
-  const [selectedSurahForView, setSelectedSurahForView] = useState(null);
-  const [librarySurahData, setLibrarySurahData] = useState([]);
-  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Dynamic Font Loading
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-
-    // Initial Vault Sync
-    const savedVault = localStorage.getItem('hifz_modular_vault');
-    if (savedVault) { try { setLocalDatabase(JSON.parse(savedVault)); } catch(e) {} }
-    const savedProgress = localStorage.getItem('hifz_memorized');
-    if (savedProgress) { try { setMemorizedAyahs(JSON.parse(savedProgress)); } catch(e) {} }
-
-    const timer = setTimeout(() => setShowSplash(false), 2000);
-    return () => { 
-      window.removeEventListener('online', handleOnline); 
-      window.removeEventListener('offline', handleOffline); 
-      document.head.removeChild(link);
-      clearTimeout(timer); 
-    };
-  }, []);
-
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-
-  const handleSelectVerse = (verse, surahData, index, surahInfo) => {
-    setLearningContext({ verse, surahData, currentIndex: index, surahInfo });
-    setActiveTab('memorize');
-    setIsJumpModalOpen(false);
-    setIsFabOpen(false);
-  };
-
-  const handleSmartBack = () => {
-    if (activeTab === 'memorize') setActiveTab('explorer');
-    else if (activeTab === 'explorer' && selectedSurahForView) { 
-      setSelectedSurahForView(null); 
-      setLibrarySurahData([]); 
-    }
-    else if (activeTab === 'qaida') setActiveTab('dashboard');
-  };
-
-  if (showSplash) return <SplashScreen />;
-
-  return (
-    <div className={`${theme === 'dark' ? 'dark' : ''} min-h-screen transition-colors duration-300`}>
-      <div className="min-h-screen bg-stone-50 dark:bg-slate-900 text-stone-800 dark:text-slate-100 font-sans selection:bg-emerald-200 dark:selection:bg-emerald-800 pb-24 relative overflow-hidden">
-        <style dangerouslySetInnerHTML={{__html: `.font-naskh { font-family: 'Amiri', serif; line-height: 2.2; }`}} />
-
-        <header className="bg-emerald-800 dark:bg-slate-950 text-stone-50 p-4 shadow-md sticky top-0 z-30">
-          <div className="max-w-md mx-auto flex justify-between items-center">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {activeTab === 'dashboard' && 'Dashboard'}
-              {activeTab === 'explorer' && 'Library'}
-              {activeTab === 'memorize' && 'Learn'}
-              {activeTab === 'qaida' && 'Reading Basics'}
-            </h1>
-            {isOffline && <span className="text-amber-400 text-xs flex items-center gap-1"><WifiOff className="w-3 h-3"/> Offline</span>}
-          </div>
-        </header>
-
-        <main className="max-w-md mx-auto p-4 pt-6" onClick={() => isFabOpen && setIsFabOpen(false)}>
-          {activeTab === 'dashboard' && <DashboardTab memorizedAyahs={memorizedAyahs} localDatabase={localDatabase} />}
-          {activeTab === 'qaida' && <QaidaTab localDatabase={localDatabase} />}
-          {activeTab === 'explorer' && <ExplorerTab 
-            onSelectVerse={handleSelectVerse} 
-            isOffline={isOffline} 
-            localDatabase={localDatabase} 
-            setLocalDatabase={setLocalDatabase}
-            selectedSurahForView={selectedSurahForView}
-            setSelectedSurahForView={setSelectedSurahForView}
-            surahData={librarySurahData}
-            setSurahData={setLibrarySurahData}
-            loading={isLibraryLoading}
-            setLoading={setIsLibraryLoading}
-          />}
-          {activeTab === 'memorize' && <MemorizeTab context={learningContext} pacingMode={pacingMode} onNextVerse={() => {
-            const { surahData, currentIndex, surahInfo } = learningContext;
-            if (currentIndex < surahData.length - 1) {
-              const nextIndex = currentIndex + 1;
-              setLearningContext({ surahInfo, surahData, currentIndex: nextIndex, verse: surahData[nextIndex] });
-            }
-          }} onPrevVerse={() => {
-            const { surahData, currentIndex, surahInfo } = learningContext;
-            if (currentIndex > 0) {
-              const prevIndex = currentIndex - 1;
-              setLearningContext({ surahInfo, surahData, currentIndex: prevIndex, verse: surahData[prevIndex] });
-            }
-          }} logMemorized={(sId, aNum) => {
-            const key = `${sId}:${aNum}`;
-            if (!memorizedAyahs.includes(key)) {
-              const newProgress = [...memorizedAyahs, key];
-              setMemorizedAyahs(newProgress);
-              localStorage.setItem('hifz_memorized', JSON.stringify(newProgress));
-            }
-          }} memorizedList={memorizedAyahs}/>}
-        </main>
-
-        {/* NAVIGATION BACK BUTTON */}
-        {((activeTab === 'memorize') || (activeTab === 'explorer' && selectedSurahForView) || (activeTab === 'qaida')) && (
-          <button onClick={handleSmartBack} className="fixed bottom-24 left-4 bg-stone-800 dark:bg-slate-700 text-white p-4 rounded-full shadow-lg z-40 border border-stone-600 transition-transform active:scale-95">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-        )}
-
-        {/* MULTI-ACTION EXPANDING FAB */}
-        <div className="fixed bottom-24 right-4 flex flex-col items-end gap-3 z-50">
-          {isFabOpen && (
-            <div className="flex flex-col items-end gap-3 animate-in slide-in-from-bottom-5 duration-200">
-              <FabActionItem icon={<BatteryLow className="w-5 h-5 text-amber-500" />} label="Low Energy" onClick={() => { setIsLowEnergyOpen(true); setIsFabOpen(false); }} />
-              <FabActionItem icon={<Search className="w-5 h-5 text-blue-400" />} label="Jump to Ayah" onClick={() => { setIsJumpModalOpen(true); setIsFabOpen(false); }} />
-              <FabActionItem icon={<Type className="w-5 h-5 text-emerald-400" />} label="Reading Basics" onClick={() => { setActiveTab('qaida'); setIsFabOpen(false); }} />
-              <FabActionItem icon={theme === 'light' ? <Moon className="w-5 h-5 text-slate-500"/> : <Sun className="w-5 h-5 text-amber-400"/>} label={theme === 'light' ? "Dark Mode" : "Light Mode"} onClick={() => { toggleTheme(); setIsFabOpen(false); }} />
-            </div>
-          )}
-          <button onClick={() => setIsFabOpen(!isFabOpen)} className={`p-4 rounded-full shadow-xl transition-all border ${isFabOpen ? 'bg-stone-800 dark:bg-slate-700 text-white' : 'bg-emerald-600 text-white'}`}>
-            {isFabOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {isFabOpen && <div className="fixed inset-0 bg-black/30 z-40 animate-in fade-in" onClick={() => setIsFabOpen(false)}></div>}
-
-        {/* BOTTOM TAB BAR */}
-        <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-950 border-t border-stone-200 dark:border-slate-800 flex justify-around items-center h-16 z-40 px-2">
-          <BottomNavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<PieChart className="w-6 h-6" />} label="Home" />
-          <BottomNavItem active={activeTab === 'explorer'} onClick={() => { if(activeTab === 'explorer'){ setSelectedSurahForView(null); setLibrarySurahData([]); } setActiveTab('explorer'); }} icon={<Book className="w-6 h-6" />} label="Library" />
-          <BottomNavItem active={activeTab === 'memorize'} onClick={() => setActiveTab('memorize')} icon={<Target className="w-6 h-6" />} label="Learn" />
-        </nav>
-
-        {isJumpModalOpen && <JumpModal onClose={() => setIsJumpModalOpen(false)} onSelect={handleSelectVerse} localDatabase={localDatabase} isOffline={isOffline}/>}
-        {isLowEnergyOpen && <LowEnergyModal context={learningContext} onClose={() => setIsLowEnergyOpen(false)} />}
-      </div>
-    </div>
-  );
-}
-
-// --- TAB COMPONENTS ---
-
-function SplashScreen() {
-  return (
-    <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center">
-      <div className="text-center animate-in zoom-in duration-700">
-        <p className="text-5xl font-naskh text-amber-400 mb-6 drop-shadow-lg">بِسْمِ اللَّهِ</p>
-        <h1 className="text-2xl font-bold text-white tracking-widest uppercase">Hifz Companion</h1>
-      </div>
-      <Loader2 className="w-6 h-6 text-amber-500 animate-spin absolute bottom-12 opacity-50" />
-    </div>
-  );
-}
-
-function FabActionItem({ icon, label, onClick }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-3 group">
-      <span className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 text-xs font-bold py-1.5 px-3 rounded-lg shadow-md border border-stone-200 dark:border-slate-700">{label}</span>
-      <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border border-stone-200 dark:border-slate-700 group-active:scale-90 transition-transform">{icon}</div>
-    </button>
-  );
-}
-
-function BottomNavItem({ active, onClick, icon, label }) {
-  return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400 dark:text-slate-500'}`}>
-      {icon}
-      <span className="text-[10px] font-bold uppercase tracking-tight">{label}</span>
-    </button>
-  );
-}
-
-function DashboardTab({ memorizedAyahs, localDatabase }) {
-  const memorizedCount = Array.isArray(memorizedAyahs) ? memorizedAyahs.length : 0;
-  const downloadedCount = Array.isArray(localDatabase) ? localDatabase.length : 0;
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 dark:from-slate-800 dark:to-slate-900 p-8 rounded-3xl text-white text-center shadow-lg relative overflow-hidden">
-        <h2 className="text-lg font-medium text-emerald-100 mb-6 uppercase tracking-widest">Mastery</h2>
-        <div className="w-40 h-40 mx-auto rounded-full border-8 border-emerald-400/30 flex flex-col items-center justify-center relative">
-          <span className="text-4xl font-black mb-1">{((memorizedCount / 6236) * 100).toFixed(1)}%</span>
-          <span className="text-[10px] text-emerald-200 uppercase tracking-widest">{memorizedCount} / 6236 Ayahs</span>
-        </div>
-      </div>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-stone-200 dark:border-slate-700">
-        <h3 className="font-bold text-stone-800 dark:text-slate-100 mb-4 text-lg">Your Vault</h3>
-        <div className="flex justify-between text-sm font-medium text-stone-600 dark:text-slate-400 mb-2">
-          <span>Downloaded Surahs</span>
-          <span>{downloadedCount} / 114</span>
-        </div>
-        <div className="w-full bg-stone-100 dark:bg-slate-700 rounded-full h-3"><div className="bg-emerald-500 h-3 rounded-full" style={{width: `${(downloadedCount/114)*100}%`}}></div></div>
-      </div>
-    </div>
-  );
-}
-
-// 1.5 QAIDA TAB (Fixed Recursion & Safety Checks)
-function QaidaTab({ localDatabase }) {
-  const [activeSection, setActiveSection] = useState('letters');
-  const [playingId, setPlayingId] = useState(null);
-  const [wordSource, setWordSource] = useState('all'); 
-  const [wordLength, setWordLength] = useState('mixed'); 
-  const [voiceGender, setVoiceGender] = useState('male'); 
-  const [audioEngine, setAudioEngine] = useState('local'); 
-  const [dynamicWords, setDynamicWords] = useState([]);
-
-  // Unified Play Audio to avoid cross-calling recursion
-  const playAudio = (text, id) => {
-    setPlayingId(id);
-    
-    const playCloud = () => {
-      const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(text)}`);
-      if (voiceGender === 'male') {
-        audio.playbackRate = 0.9;
-        if ('preservesPitch' in audio) audio.preservesPitch = false;
-      }
-      audio.onended = () => setPlayingId(null);
-      audio.onerror = () => setPlayingId(null);
-      audio.play().catch(() => setPlayingId(null));
-    };
-
-    const playLocal = () => {
-      if (!('speechSynthesis' in window)) {
-        playCloud();
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ar-SA';
-      const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ar'));
-      if (voices.length > 0) {
-        const maleNames = ['tariq', 'maged', 'hamid'];
-        const femaleNames = ['laila', 'hoda', 'salma'];
-        u.voice = voiceGender === 'male' ? 
-            (voices.find(v => maleNames.some(n => v.name.toLowerCase().includes(n))) || voices[0]) :
-            (voices.find(v => femaleNames.some(n => v.name.toLowerCase().includes(n))) || voices[voices.length-1]);
-        u.pitch = voiceGender === 'male' ? 0.9 : 1.1;
-        u.rate = 1.0;
-        u.onend = () => setPlayingId(null);
-        u.onerror = () => setPlayingId(null);
-        window.speechSynthesis.speak(u);
-      } else {
-        playCloud();
-      }
-    };
-
-    if (audioEngine === 'cloud') playCloud();
-    else playLocal();
-  };
-
-  // Safe Generator for Words
-  useEffect(() => {
-    if (activeSection !== 'joined') return;
-    const BEGINNER = ["قُلْ", "رَبِّ", "أَحَدٌ", "الصَّمَدُ", "الْمُسْتَقِيمَ", "الْعَالَمِينَ", "مَالِكِ", "إِلَٰهِ"];
-    let raw = [...BEGINNER];
-    
-    const sourceData = (wordSource === 'all') 
-      ? (Array.isArray(localDatabase) && localDatabase.length > 0 ? localDatabase : [{ ayahs: OFFLINE_PACK["1"] }])
-      : (Array.isArray(localDatabase) ? [localDatabase.find(s => s?.id?.toString() === wordSource)] : [{ ayahs: OFFLINE_PACK["1"] }]);
-
-    sourceData.forEach(s => {
-      if (s && s.ayahs) {
-        s.ayahs.forEach(a => {
-          if (a && a.arabic) {
-            const words = a.arabic.split(' ').filter(w => w.trim().length > 0);
-            raw = [...raw, ...words];
-          }
-        });
-      }
-    });
-
-    const filtered = raw.filter(w => {
-      const len = w.replace(/[\u064B-\u065F\u0670]/g, '').length;
-      if (wordLength === 'short') return len <= 3;
-      if (wordLength === 'medium') return len >= 4 && len <= 5;
-      if (wordLength === 'long') return len >= 6;
-      return true;
-    });
-
-    const unique = [...new Set(filtered)];
-    const final = unique.sort(() => 0.5 - Math.random()).slice(0, 6).map((w, i) => ({ id: `dw_${i}`, text: w }));
-    setDynamicWords(final);
-  }, [activeSection, wordSource, wordLength, localDatabase]);
-
-  const FULL_ALPHABET = [
-    { id: 1, letter: "ا", name: "Alif" }, { id: 2, letter: "ب", name: "Baa" }, { id: 3, letter: "ت", name: "Taa" }, { id: 4, letter: "ث", name: "Thaa" }, 
-    { id: 5, letter: "ج", name: "Jeem" }, { id: 6, letter: "ح", name: "Haa" }, { id: 7, letter: "خ", name: "Khaa" }, { id: 8, letter: "د", name: "Daal" }, 
-    { id: 9, letter: "ذ", name: "Thaal" }, { id: 10, letter: "ر", name: "Raa" }, { id: 11, letter: "ز", name: "Zaa" }, { id: 12, letter: "س", name: "Seen" }, 
-    { id: 13, letter: "ش", name: "Sheen" }, { id: 14, letter: "ص", name: "Saad" }, { id: 15, letter: "ض", name: "Dhaad" }, { id: 16, letter: "ط", name: "Taa" }, 
-    { id: 17, letter: "ظ", name: "Zhaa" }, { id: 18, letter: "ع", name: "Ayn" }, { id: 19, letter: "غ", name: "Ghayn" }, { id: 20, letter: "ف", name: "Faa" }, 
-    { id: 21, letter: "ق", name: "Qaaf" }, { id: 22, letter: "ك", name: "Kaaf" }, { id: 23, letter: "ل", name: "Laam" }, { id: 24, letter: "م", name: "Meem" }, 
-    { id: 25, letter: "ن", name: "Noon" }, { id: 26, letter: "ه", name: "Haa" }, { id: 27, letter: "و", name: "Waaw" }, { id: 28, letter: "ي", name: "Yaa" }, 
-    { id: 29, letter: "ء", name: "Hamza" }
-  ];
-
-  const RULES = [
-    { id: 101, title: "Fatha (ـَ)", example: "بَ", sound: "ba", bg: "bg-emerald-50", text: "text-emerald-600" },
-    { id: 102, title: "Kasra (ـِ)", example: "بِ", sound: "bi", bg: "bg-blue-50", text: "text-blue-600" },
-    { id: 103, title: "Damma (ـُ)", example: "بُ", sound: "bu", bg: "bg-amber-50", text: "text-amber-600" },
-    { id: 104, title: "Sukun (ـْ)", example: "بْ", sound: "ab", bg: "bg-rose-50", text: "text-rose-600" },
-    { id: 105, title: "Shaddah (ـّ)", example: "بَّ", sound: "abba", bg: "bg-purple-50", text: "text-purple-600" },
-    { id: 106, title: "Madd (ـٓ)", example: "مَآ", sound: "maaa", bg: "bg-cyan-50", text: "text-cyan-600" },
-    { id: 107, title: "Ghunnah", example: "إِنَّ", sound: "inna", bg: "bg-fuchsia-50", text: "text-fuchsia-600" },
-    { id: 108, title: "Qalqalah", example: "أَبْ", sound: "ab-ba", bg: "bg-orange-50", text: "text-orange-600" }
-  ];
-
-  return (
-    <div className="space-y-6 animate-in slide-in-from-right pb-12">
-      <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border dark:border-slate-700 flex shadow-sm">
-        <button onClick={() => setActiveSection('letters')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'letters' ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-500'}`}>Alphabet</button>
-        <button onClick={() => setActiveSection('joined')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'joined' ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-500'}`}>Words</button>
-        <button onClick={() => setActiveSection('rules')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'rules' ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-500'}`}>Rules</button>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
-          <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-widest">Voice Gender</p>
-          <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
-            <button onClick={() => setVoiceGender('male')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${voiceGender === 'male' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Male</button>
-            <button onClick={() => setVoiceGender('female')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${voiceGender === 'female' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Female</button>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
-          <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-widest">Audio Source</p>
-          <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
-            <button onClick={() => setAudioEngine('local')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${audioEngine === 'local' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Local</button>
-            <button onClick={() => setAudioEngine('cloud')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${audioEngine === 'cloud' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Cloud</button>
-          </div>
-        </div>
-      </div>
-
-      {activeSection === 'letters' && (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 grid grid-cols-3 gap-3">
-          {FULL_ALPHABET.map(item => (
-            <button key={item.id} onClick={() => playAudio(item.letter, item.id)} className={`aspect-square rounded-xl border flex flex-col items-center justify-center p-2 transition-all relative ${playingId === item.id ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 scale-95' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
-              <p className="text-4xl font-naskh dark:text-white leading-none mb-1">{item.letter}</p>
-              <p className="text-[10px] font-bold text-stone-400">{item.name}</p>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {activeSection === 'joined' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] uppercase font-bold text-stone-500 mb-1 block">Context</label>
-                <select value={wordSource} onChange={(e) => setWordSource(e.target.value)} className="w-full bg-stone-100 dark:bg-slate-900 border dark:border-slate-700 rounded-lg p-2 text-xs outline-none">
-                  <option value="all">Entire Vault</option>
-                  {Array.isArray(localDatabase) && localDatabase.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] uppercase font-bold text-stone-500 mb-1 block">Word Length</label>
-                <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg border dark:border-slate-700">
-                  {['short', 'medium', 'long'].map(len => (
-                    <button key={len} onClick={() => setWordLength(len)} className={`flex-1 py-1 text-[10px] font-bold rounded-md capitalize ${wordLength === len ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>{len}</button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 text-center relative shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <p className="text-stone-600 dark:text-slate-400 text-xs">Read the word, then tap to listen.</p>
-              <button onClick={() => setWordLength(wordLength)} className="p-2 bg-stone-100 dark:bg-slate-700 rounded-lg transition-transform active:scale-90"><Shuffle className="w-4 h-4 text-emerald-600" /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {dynamicWords.map(item => (
-                <button key={item.id} onClick={() => playAudio(item.text, item.id)} className={`py-8 rounded-xl border flex items-center justify-center transition-all ${playingId === item.id ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 scale-95' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
-                  <p className="text-4xl font-naskh dark:text-white">{item.text}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeSection === 'rules' && (
-        <div className="space-y-3">
-          {RULES.map(rule => (
-            <div key={rule.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex items-center justify-between shadow-sm">
-              <div><h4 className="font-bold text-stone-800 dark:text-slate-200">{rule.title}</h4></div>
-              <button onClick={() => playAudio(rule.example, rule.id)} className={`w-14 h-14 rounded-lg flex items-center justify-center text-2xl font-naskh ${rule.bg} ${rule.text} border ${playingId === rule.id ? 'ring-2 ring-emerald-500 scale-95' : 'border-transparent'}`}>{rule.example}</button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// 2. EXPLORER TAB
-function ExplorerTab({ onSelectVerse, isOffline, localDatabase, setLocalDatabase, selectedSurahForView, setSelectedSurahForView, surahData, setSurahData, loading, setLoading }) {
-  const [openPhase, setOpenPhase] = useState("Phase 1: Foundation");
-  const [expandedVerseMenu, setExpandedVerseMenu] = useState(null);
-  const fileInputRef = useRef(null);
-  const phases = [...new Set(SURAHS.map(s => s.phase))];
-  
-  useEffect(() => { if (selectedSurahForView && surahData.length === 0) loadSurah(selectedSurahForView); }, [selectedSurahForView]);
-  
-  const loadSurah = async (info) => {
-    setSelectedSurahForView(info);
-    setLoading(true);
-    let verses = (Array.isArray(localDatabase) && localDatabase.find(s => s.id === info.id)?.ayahs) || OFFLINE_PACK[info.id];
-    if (!verses && !isOffline) {
-      try {
-        const [ar, en, tr] = await Promise.all([fetch(`https://api.alquran.cloud/v1/surah/${info.id}`), fetch(`https://api.alquran.cloud/v1/surah/${info.id}/en.sahih`), fetch(`https://api.alquran.cloud/v1/surah/${info.id}/en.transliteration`)]);
-        const arJ = await ar.json(), enJ = await en.json(), trJ = await tr.json();
-        verses = arJ.data.ayahs.map((a, i) => ({ ayah: a.numberInSurah, arabic: a.text, english: enJ.data.ayahs[i].text, transliteration: trJ.data.ayahs[i].text }));
-      } catch (e) { alert("Error fetching."); setLoading(false); return; }
-    } else if (!verses) { alert("Surah not found."); setLoading(false); return; }
-    setSurahData(verses);
-    setLoading(false);
-  };
-
-  if (selectedSurahForView) {
-    return (
-      <div className="space-y-6 animate-in slide-in-from-right duration-300 pb-12" onClick={() => setExpandedVerseMenu(null)}>
-        <button onClick={() => onSelectVerse(surahData[0], surahData, 0, selectedSurahForView)} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg transition-transform active:scale-95"><Play className="w-5 h-5 fill-current"/> Start Memorizing</button>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 text-center shadow-sm">
-          <h2 className="text-2xl font-bold dark:text-white">Surah {selectedSurahForView.name}</h2>
-          <p className="text-stone-500 text-sm mb-6">{selectedSurahForView.english}</p>
-          {loading ? ( <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-emerald-600" /></div> ) : (
-            <div className="space-y-8 text-left">{surahData.map((v, idx) => (
-                <div key={v.ayah} className="p-4 bg-stone-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700 relative">
-                  <div className="absolute top-3 right-3"><button onClick={(e) => { e.stopPropagation(); setExpandedVerseMenu(expandedVerseMenu === v.ayah ? null : v.ayah); }} className="p-1 text-stone-400 border rounded-lg dark:border-slate-700"><MoreHorizontal className="w-5 h-5"/></button>
-                    {expandedVerseMenu === v.ayah && ( <div className="absolute top-8 right-0 bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-xl rounded-lg p-2 z-10 w-48"><button onClick={() => onSelectVerse(v, surahData, idx, selectedSurahForView)} className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 w-full text-left"><Target className="w-4 h-4"/> Focus & Learn</button></div> )}
-                  </div>
-                  <div className="absolute -left-3 -top-3 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300 w-8 h-8 rounded-full flex items-center justify-center font-bold">{v.ayah}</div>
-                  <div className="flex flex-col gap-4 mt-6"><p className="text-3xl font-naskh text-right leading-relaxed dark:text-white" dir="rtl">{v.arabic}</p>
-                    {v.transliteration && (<div className="p-3 bg-stone-100 dark:bg-slate-800 rounded-lg border dark:border-slate-700 text-emerald-800 dark:text-emerald-400 italic text-sm">{v.transliteration}</div>)}
-                    <p className="text-sm dark:text-slate-300">"{v.english}"</p>
-                    {v.tafsir && ( <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl text-left border border-amber-100 dark:border-amber-800/30 text-sm">{v.tafsir}</div> )}
-                  </div>
-                </div>
-              ))}</div> )}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
-        <div><h3 className="font-bold dark:text-white flex items-center gap-2"><Database className="w-5 h-5 text-emerald-600" /> Vault Manager</h3></div>
-        <input type="file" accept=".json" multiple ref={fileInputRef} onChange={async (e) => {
-          const files = Array.from(e.target.files); if (!files.length) return;
-          let newS = []; for (const f of files) { try { const text = await f.text(); const d = JSON.parse(text); if (Array.isArray(d)) newS = [...newS, ...d]; } catch (err) {} }
-          if (newS.length > 0) {
-            setLocalDatabase(prev => {
-              const m = [...(prev || [])];
-              newS.forEach(ns => { const idx = m.findIndex(s => s.id === ns.id); if (idx >= 0) m[idx] = ns; else m.push(ns); });
-              localStorage.setItem('hifz_modular_vault', JSON.stringify(m)); return m;
+        function App() {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [theme, setTheme] = useState('dark');
+            const [isFabOpen, setIsFabOpen] = useState(false);
+            const [localDatabase, setLocalDatabase] = useState([]);
+            const [memorizedAyahs, setMemorizedAyahs] = useState([]);
+            const [selectedSurahForView, setSelectedSurahForView] = useState(null);
+            const [librarySurahData, setLibrarySurahData] = useState([]);
+            const [isLibraryLoading, setIsLibraryLoading] = useState(false);
+            const [isJumpModalOpen, setIsJumpModalOpen] = useState(false);
+            const [isLowEnergyOpen, setIsLowEnergyOpen] = useState(false);
+            const [learningContext, setLearningContext] = useState({ 
+                surahInfo: SURAHS[0], verse: OFFLINE_PACK["1"][0], surahData: OFFLINE_PACK["1"], currentIndex: 0 
             });
-          }
-          e.target.value = null;
-        }} className="hidden" />
-        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-lg font-bold text-sm">Add Pack</button>
-      </div>
-      <div className="space-y-3">{phases.map(ph => (
-        <div key={ph} className="bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 overflow-hidden shadow-sm">
-          <button onClick={() => setOpenPhase(openPhase === ph ? null : ph)} className="w-full flex justify-between items-center p-5 hover:bg-stone-50 dark:hover:bg-slate-700/50 transition-colors"><span className="font-bold text-lg dark:text-white">{ph}</span><ChevronDown className={`w-5 h-5 transition-transform ${openPhase === ph ? 'rotate-180' : ''}`} /></button>
-          {openPhase === ph && (<div className="divide-y dark:divide-slate-700">{SURAHS.filter(s => s.phase === ph).map(s => (
-            <div key={s.id} onClick={() => loadSurah(s)} className="flex justify-between items-center p-4 pl-6 hover:bg-emerald-50 dark:hover:bg-slate-700/50 cursor-pointer group">
-              <div><p className="font-bold dark:text-white">{s.id}. {s.name}</p><p className="text-xs text-stone-500">{s.english}</p></div>
-              <div className="flex gap-2">{(localDatabase.some(ls => ls.id === s.id) || OFFLINE_PACK[s.id]) && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}<ChevronRight className="w-5 h-5 text-stone-300 group-hover:text-emerald-500" /></div>
-            </div>
-          ))}</div>)}
-        </div>
-      ))}</div>
-    </div>
-  );
-}
 
-// 3. MEMORIZE TAB
-function MemorizeTab({ context, pacingMode, onNextVerse, onPrevVerse, logMemorized, memorizedList }) {
-  const [step, setStep] = useState(1);
-  const [reps, setReps] = useState(0);
-  useEffect(() => { setStep(1); setReps(0); }, [context.verse.ayah]);
-  const steps = [{ id: 1, title: "Understand", targetReps: 1 }, { id: 2, title: "Listen", targetReps: pacingMode === 'accelerated' ? 3 : 5 }, { id: 3, title: "Repeat", targetReps: pacingMode === 'accelerated' ? 5 : 10 }, { id: 4, title: "Test", targetReps: pacingMode === 'accelerated' ? 3 : 5 }];
-  const isCompleted = step === 4 && reps >= steps[3].targetReps;
-  useEffect(() => { if (isCompleted) logMemorized(context.surahInfo.id, context.verse.ayah); }, [isCompleted]);
-  return (
-    <div className="space-y-4 animate-in fade-in pb-12">
-      <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700"><button onClick={onPrevVerse} disabled={context.currentIndex === 0} className="p-2 text-stone-600 disabled:opacity-30 transition-opacity"><ChevronLeft /></button><div className="text-center"><h2 className="text-sm font-bold dark:text-white">Surah {context.surahInfo.name}</h2><span className="text-xs text-stone-500">Ayah {context.verse.ayah}</span></div><button onClick={onNextVerse} disabled={context.currentIndex === context.surahData.length - 1} className="p-2 text-stone-600 disabled:opacity-30 transition-opacity"><ChevronRight /></button></div>
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 text-center relative shadow-sm"><p className="text-4xl font-naskh text-stone-900 dark:text-white leading-relaxed mb-6" dir="rtl">{context.verse.arabic}</p><p className="text-emerald-600 dark:text-emerald-400 font-medium italic mb-4">{context.verse.transliteration}</p><p className="text-stone-700 dark:text-slate-300">"{context.verse.english}"</p></div>
-      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm">
-        <div className="flex justify-between items-center mb-4"><h3 className="font-bold dark:text-white text-sm">Learning Block</h3><div className="flex gap-2 items-center">{memorizedList.includes(`${context.surahInfo.id}:${context.verse.ayah}`) && <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400 text-[10px] px-2 py-1 rounded font-bold uppercase">Memorized</span>}<button onClick={() => {setStep(1); setReps(0);}} className="p-1 text-stone-400 hover:text-stone-600 transition-colors"><RefreshCw className="w-4 h-4"/></button></div></div>
-        <div className="space-y-3">{steps.map(s => ( <div key={s.id} className={`p-4 rounded-xl border-2 transition-all flex justify-between items-center ${step === s.id ? 'border-emerald-500 bg-emerald-50 dark:bg-slate-700' : 'opacity-40'}`}><h4 className="font-bold text-sm dark:text-white">{s.id}. {s.title}</h4>{step === s.id && (<div className="flex items-center gap-2"><span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{reps}/{s.targetReps}</span><button onClick={() => { if(reps + 1 >= s.targetReps){ if(step < 4){ setStep(step + 1); setReps(0); } else setReps(s.targetReps); } else setReps(reps + 1); }} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm active:scale-95 shadow-sm transition-all">Log</button></div>)}</div> ))}</div>
-        {!isCompleted && !memorizedList.includes(`${context.surahInfo.id}:${context.verse.ayah}`) && (<button onClick={() => { logMemorized(context.surahInfo.id, context.verse.ayah); if (context.currentIndex < context.surahData.length - 1) onNextVerse(); }} className="w-full mt-4 py-3 bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 rounded-xl font-bold text-sm flex justify-center items-center gap-2 active:bg-stone-200 transition-colors"><SkipForward className="w-4 h-4" /> Mark Complete</button>)}
-        {isCompleted && (<div className="mt-6 text-center"><button onClick={onNextVerse} className="w-full bg-emerald-700 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2 transition-transform active:scale-95 shadow-lg">Next Ayah <ArrowRight /></button></div>)}
-      </div>
-    </div>
-  );
-}
+            useEffect(() => {
+                const savedVault = localStorage.getItem('hifz_vault_gh_v3');
+                if (savedVault) setLocalDatabase(JSON.parse(savedVault));
+                const savedProgress = localStorage.getItem('hifz_progress_gh_v3');
+                if (savedProgress) setMemorizedAyahs(JSON.parse(savedProgress));
+            }, []);
 
-function JumpModal({ onClose, onSelect, localDatabase, isOffline }) {
-  const [sNum, setSNum] = useState(''); const [aNum, setANum] = useState('');
-  const handleJump = async () => {
-    const sId = parseInt(sNum); const aId = parseInt(aNum); if(!sId || !aId) return;
-    const info = SURAHS.find(s => s.id === sId) || { id: sId, name: "Surah "+sId, english: "" };
-    let vs = (Array.isArray(localDatabase) && localDatabase.find(s => s?.id === sId)?.ayahs) || OFFLINE_PACK[sId];
-    if (!vs && !isOffline) {
-       try { const [ar, en, tr] = await Promise.all([fetch(`https://api.alquran.cloud/v1/surah/${sId}`), fetch(`https://api.alquran.cloud/v1/surah/${sId}/en.sahih`), fetch(`https://api.alquran.cloud/v1/surah/${sId}/en.transliteration`)]); const arJ = await ar.json(), enJ = await en.json(), trJ = await tr.json(); vs = arJ.data.ayahs.map((a, i) => ({ ayah: a.numberInSurah, arabic: a.text, english: enJ.data.ayahs[i].text, transliteration: trJ.data.ayahs[i].text })); } catch (e) { alert("Network Error."); return; }
-    } else if (!vs) { alert("Offline. Not found."); return; }
-    const target = vs.find(v => v.ayah === aId); if(target) onSelect(target, vs, vs.findIndex(v => v.ayah === aId), info); else alert("Ayah Not found.");
-  };
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={onClose}><div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-xl border dark:border-slate-700" onClick={e => e.stopPropagation()}><h3 className="text-xl font-bold mb-4 dark:text-white border-b border-stone-200 dark:border-slate-700 pb-2 text-center">Teleport to Ayah</h3><div className="space-y-4 mb-6"><div><label className="text-[10px] font-bold text-stone-500 uppercase">Surah Number</label><input type="number" value={sNum} onChange={e=>setSNum(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-3 dark:text-white outline-none border border-transparent focus:border-emerald-500 transition-colors" /></div><div><label className="text-[10px] font-bold text-stone-500 uppercase">Ayah Number</label><input type="number" value={aNum} onChange={e=>setANum(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-3 dark:text-white outline-none border border-transparent focus:border-emerald-500 transition-colors" /></div></div><div className="flex gap-3"><button onClick={onClose} className="flex-1 py-3 rounded-xl font-bold bg-stone-100 dark:bg-slate-700 dark:text-white">Cancel</button><button onClick={handleJump} className="flex-1 py-3 rounded-xl font-bold text-white bg-emerald-600 transition-colors active:bg-emerald-700">Go</button></div></div></div>
-  );
-}
+            const handleSelectVerse = (verse, surahData, index, surahInfo) => {
+                setLearningContext({ verse, surahData, currentIndex: index, surahInfo });
+                setActiveTab('memorize');
+                setIsJumpModalOpen(false);
+                setIsFabOpen(false);
+            };
 
-function LowEnergyModal({ context, onClose }) {
-  const [t, setT] = useState(300); const [active, setActive] = useState(false);
-  useEffect(() => { let i; if (active && t > 0) i = setInterval(() => setT(v => v - 1), 1000); return () => clearInterval(i); }, [active, t]);
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom"><div className="absolute inset-0 bg-black/40 -top-[100vh] backdrop-blur-sm" onClick={onClose}></div><div className="bg-stone-900 text-stone-100 p-6 rounded-t-3xl border-t border-stone-700 relative shadow-2xl"><BatteryLow className="w-10 h-10 text-amber-500 mb-4" /><h2 className="text-2xl font-bold mb-2">Low Energy Mode</h2><p className="text-stone-400 text-sm mb-6 leading-relaxed">Trace Surah {context?.surahInfo?.name} with your eyes. No output required.</p><div className="bg-stone-800 p-6 rounded-2xl mb-6 flex justify-between items-center text-5xl font-mono font-bold text-amber-400 tracking-wider shadow-inner">{Math.floor(t/60)}:{(t%60).toString().padStart(2,'0')}<button onClick={() => setActive(!active)} className="bg-amber-600 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90">{active ? <Pause /> : <Play />}</button></div><div className="bg-stone-800/50 p-4 rounded-xl border border-stone-700/50"><p className="text-3xl font-naskh text-center leading-relaxed" dir="rtl">{context?.verse?.arabic}</p></div></div></div>
-  );
-}
+            const handleSmartBack = () => {
+                if (activeTab === 'memorize') setActiveTab('explorer');
+                else if (activeTab === 'explorer' && selectedSurahForView) { setSelectedSurahForView(null); setLibrarySurahData([]); }
+                else if (activeTab === 'qaida') setActiveTab('dashboard');
+            };
+
+            return (
+                <div className={`${theme === 'dark' ? 'dark' : ''} min-h-screen transition-colors duration-300`}>
+                    <div className="min-h-screen bg-stone-50 dark:bg-slate-900 text-stone-800 dark:text-slate-100 font-sans pb-24 relative overflow-x-hidden">
+                        
+                        <header className="bg-emerald-800 dark:bg-slate-950 text-stone-50 p-4 shadow-xl sticky top-0 z-30">
+                            <h1 className="text-xl font-bold tracking-tight uppercase text-center">Hifz Companion</h1>
+                        </header>
+
+                        <main className="max-w-md mx-auto p-4 pt-6">
+                            {activeTab === 'dashboard' && <Dashboard localDatabase={localDatabase} memorizedAyahs={memorizedAyahs} />}
+                            {activeTab === 'qaida' && <Qaida localDatabase={localDatabase} />}
+                            {activeTab === 'explorer' && <Explorer 
+                                localDatabase={localDatabase} 
+                                setLocalDatabase={setLocalDatabase}
+                                selectedSurahForView={selectedSurahForView}
+                                setSelectedSurahForView={setSelectedSurahForView}
+                                librarySurahData={librarySurahData}
+                                setLibrarySurahData={setLibrarySurahData}
+                                loading={isLibraryLoading}
+                                setLoading={setIsLibraryLoading}
+                                onSelectVerse={handleSelectVerse}
+                            />}
+                            {activeTab === 'memorize' && <Memorize context={learningContext} setContext={setLearningContext} memorizedAyahs={memorizedAyahs} setMemorizedAyahs={setMemorizedAyahs}/>}
+                        </main>
+
+                        {/* NAV BACK BUTTON */}
+                        {(activeTab === 'qaida' || (activeTab === 'explorer' && selectedSurahForView) || activeTab === 'memorize') && (
+                            <button onClick={handleSmartBack} className="fixed bottom-24 left-4 p-4 bg-stone-800 text-white rounded-full shadow-lg border border-stone-700 z-50">
+                                <LucideIcon name="arrow-left" />
+                            </button>
+                        )}
+
+                        {/* EXPANDING FAB BACKDROP */}
+                        {isFabOpen && <div className="fixed inset-0 bg-black/40 z-40 animate-in" onClick={() => setIsFabOpen(false)}></div>}
+
+                        {/* EXPANDING FAB */}
+                        <div className="fixed bottom-24 right-4 flex flex-col items-end gap-3 z-50">
+                            {isFabOpen && (
+                                <div className="flex flex-col items-end gap-3 mb-2">
+                                    <FabActionItem icon="battery-low" label="Low Energy" color="text-amber-500" onClick={() => { setIsLowEnergyOpen(true); setIsFabOpen(false); }} />
+                                    <FabActionItem icon="search" label="Teleport" color="text-blue-400" onClick={() => { setIsJumpModalOpen(true); setIsFabOpen(false); }} />
+                                    <FabActionItem icon="type" label="Basics" color="text-emerald-500" onClick={() => { setActiveTab('qaida'); setIsFabOpen(false); }} />
+                                    <FabActionItem icon={theme === 'dark' ? "sun" : "moon"} label="Theme" color="text-slate-400" onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setIsFabOpen(false); }} />
+                                </div>
+                            )}
+                            <button onClick={() => setIsFabOpen(!isFabOpen)} className="p-4 bg-emerald-600 text-white rounded-full shadow-2xl border border-emerald-500 transition-transform">
+                                <LucideIcon name={isFabOpen ? "x" : "menu"} />
+                            </button>
+                        </div>
+
+                        <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-950 border-t border-stone-200 dark:border-slate-800 flex justify-around items-center h-16 z-40">
+                            <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 ${activeTab === 'dashboard' ? 'text-emerald-500' : 'text-stone-400'}`}>
+                                <LucideIcon name="home" />
+                                <span className="text-[10px] font-bold uppercase">Home</span>
+                            </button>
+                            <button onClick={() => { setActiveTab('explorer'); setSelectedSurahForView(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'explorer' ? 'text-emerald-500' : 'text-stone-400'}`}>
+                                <LucideIcon name="book" />
+                                <span className="text-[10px] font-bold uppercase">Library</span>
+                            </button>
+                            <button onClick={() => setActiveTab('memorize')} className={`flex flex-col items-center gap-1 ${activeTab === 'memorize' ? 'text-emerald-500' : 'text-stone-400'}`}>
+                                <LucideIcon name="target" />
+                                <span className="text-[10px] font-bold uppercase">Learn</span>
+                            </button>
+                        </nav>
+
+                        {isJumpModalOpen && <JumpModal onClose={() => setIsJumpModalOpen(false)} onSelect={handleSelectVerse} localDatabase={localDatabase} />}
+                        {isLowEnergyOpen && <LowEnergyModal context={learningContext} onClose={() => setIsLowEnergyOpen(false)} />}
+                    </div>
+                </div>
+            );
+        }
+
+        function FabActionItem({ icon, label, onClick, color }) {
+            return (
+                <button onClick={onClick} className="flex items-center gap-3">
+                    <span className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-md border dark:border-slate-700 uppercase tracking-tighter">{label}</span>
+                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border dark:border-slate-700">
+                        <LucideIcon name={icon} className={`w-5 h-5 ${color}`} />
+                    </div>
+                </button>
+            );
+        }
+
+        function Dashboard({ localDatabase, memorizedAyahs }) {
+            const stats = ((memorizedAyahs.length / 6236) * 100).toFixed(1);
+            return (
+                <div className="space-y-6 animate-in">
+                    <div className="bg-gradient-to-br from-emerald-600 to-emerald-900 p-8 rounded-3xl text-white text-center shadow-xl relative overflow-hidden">
+                        <h2 className="text-sm font-medium uppercase tracking-widest opacity-80 mb-4">Total Progress</h2>
+                        <div className="w-44 h-44 mx-auto rounded-full border-8 border-white/20 flex flex-col items-center justify-center">
+                            <span className="text-5xl font-black">{stats}%</span>
+                            <span className="text-[10px] opacity-60 uppercase mt-1">Memorized</span>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm">
+                        <h3 className="font-bold mb-4 flex items-center gap-2 uppercase text-xs tracking-widest opacity-60">Offline Vault</h3>
+                        <div className="flex justify-between text-xs font-bold text-stone-500 uppercase mb-2">
+                            <span>Downloaded Packs</span>
+                            <span>{localDatabase.length} / 114</span>
+                        </div>
+                        <div className="w-full bg-stone-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                            <div className="bg-emerald-500 h-full" style={{width: `${(localDatabase.length/114)*100}%`}}></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Qaida({ localDatabase }) {
+            const [section, setSection] = useState('letters');
+            const [gender, setGender] = useState('male');
+            const [source, setSource] = useState('local');
+            const [len, setLen] = useState('mixed');
+            const [playingId, setPlayingId] = useState(null);
+            const [dynamicWords, setDynamicWords] = useState([]);
+            const alphabet = "ابتثجحخدذرزسشصضطظعغفقكلمنهويء".split("");
+
+            const playAudio = (txt, id) => {
+                setPlayingId(id);
+                const isCloud = source === 'cloud';
+                
+                const playDirect = () => {
+                    if (isCloud) {
+                        const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(txt)}`);
+                        if (gender === 'male') { audio.playbackRate = 0.9; if ('preservesPitch' in audio) audio.preservesPitch = false; }
+                        audio.onended = () => setPlayingId(null);
+                        audio.play().catch(() => setPlayingId(null));
+                    } else {
+                        window.speechSynthesis.cancel();
+                        const u = new SpeechSynthesisUtterance(txt);
+                        u.lang = 'ar-SA';
+                        const vList = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ar'));
+                        if (vList.length > 0) {
+                            const maleNames = ['tariq', 'maged', 'hamid'];
+                            const femaleNames = ['laila', 'hoda', 'salma'];
+                            u.voice = gender === 'male' ? 
+                                (vList.find(v => maleNames.some(n => v.name.toLowerCase().includes(n))) || vList[0]) :
+                                (vList.find(v => femaleNames.some(n => v.name.toLowerCase().includes(n))) || vList[vList.length-1]);
+                            u.pitch = gender === 'male' ? 0.9 : 1.1;
+                            u.rate = 1.0;
+                            u.onend = () => setPlayingId(null);
+                            window.speechSynthesis.speak(u);
+                        } else {
+                            // Fallback to cloud MP3 if no local voices
+                            const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(txt)}`);
+                            audio.onended = () => setPlayingId(null);
+                            audio.play();
+                        }
+                    }
+                };
+                playDirect();
+            };
+
+            useEffect(() => {
+                if (section !== 'words') return;
+                const baseline = ["قُلْ", "رَبِّ", "أَحَدٌ", "الصَّمَدُ", "الْمُسْتَقِيمَ", "الْعَالَمِينَ"];
+                let raw = [...baseline];
+                const sourceData = (localDatabase && localDatabase.length > 0) ? localDatabase : [{ayahs: OFFLINE_PACK["1"]}];
+                sourceData.forEach(s => s?.ayahs?.forEach(a => a.arabic && (raw = [...raw, ...a.arabic.split(' ')])));
+                const filtered = raw.filter(w => {
+                    const cleanLen = w.replace(/[\u064B-\u065F\u0670]/g, '').length;
+                    if (len === 'short') return cleanLen <= 3;
+                    if (len === 'medium') return cleanLen >= 4 && cleanLen <= 5;
+                    if (len === 'long') return cleanLen >= 6;
+                    return true;
+                });
+                setDynamicWords([...new Set(filtered)].sort(() => 0.5 - Math.random()).slice(0, 6));
+            }, [section, len, localDatabase]);
+
+            return (
+                <div className="space-y-6 animate-in slide-in-from-right">
+                    <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border dark:border-slate-700 shadow-sm">
+                        <button onClick={() => setSection('letters')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${section === 'letters' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Alphabet</button>
+                        <button onClick={() => setSection('words')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${section === 'words' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Words</button>
+                        <button onClick={() => setSection('rules')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${section === 'rules' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Rules</button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase text-center tracking-widest">Voice Gender</p>
+                            <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
+                                <button onClick={() => setGender('male')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${gender === 'male' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Male</button>
+                                <button onClick={() => setGender('female')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${gender === 'female' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Female</button>
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase text-center tracking-widest">Audio Source</p>
+                            <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
+                                <button onClick={() => setSource('local')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${source === 'local' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Local</button>
+                                <button onClick={() => setSource('cloud')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${source === 'cloud' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Cloud</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {section === 'letters' && (
+                        <div className="grid grid-cols-4 gap-2 bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 shadow-sm">
+                            {alphabet.map((l, i) => (
+                                <button key={i} onClick={() => playAudio(l, i)} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all ${playingId === i ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
+                                    <span className="text-3xl font-naskh">{l}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {section === 'words' && (
+                        <div className="space-y-4">
+                            <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border dark:border-slate-700 shadow-sm">
+                                {['short', 'medium', 'long', 'mixed'].map(lv => (
+                                    <button key={lv} onClick={() => setLen(lv)} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg capitalize ${len === lv ? 'bg-emerald-600 text-white' : 'text-stone-400'}`}>{lv}</button>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                {dynamicWords.map((w, i) => (
+                                    <button key={i} onClick={() => playAudio(w, `w${i}`)} className={`py-8 rounded-2xl border flex items-center justify-center transition-all ${playingId === `w${i}` ? 'bg-amber-100 border-amber-400 dark:bg-amber-900' : 'bg-white dark:bg-slate-800 dark:border-slate-700'}`}>
+                                        <span className="text-3xl font-naskh">{w}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {section === 'rules' && (
+                        <div className="space-y-3">
+                            {[{t:"Fatha (ـَ)", e:"بَ"}, {t:"Kasra (ـِ)", e:"بِ"}, {t:"Damma (ـُ)", e:"بُ"}, {t:"Sukun (ـْ)", e:"بْ"}].map((r, i) => (
+                                <div key={i} className="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
+                                    <span className="font-bold text-sm">{r.t}</span>
+                                    <button onClick={() => playAudio(r.e, `r${i}`)} className={`w-12 h-12 rounded-lg border flex items-center justify-center text-2xl font-naskh ${playingId === `r${i}` ? 'bg-emerald-100 border-emerald-500 text-emerald-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>{r.e}</button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function Explorer({ selectedSurahForView, setSelectedSurahForView, librarySurahData, setLibrarySurahData, onSelectVerse, localDatabase, setLocalDatabase, loading, setLoading }) {
+            const [expandedVerseMenu, setExpandedVerseMenu] = useState(null);
+            const fileInputRef = useRef(null);
+
+            const loadSurah = (id) => {
+                setLoading(true);
+                const data = (localDatabase && localDatabase.find(s => s.id === id)?.ayahs) || OFFLINE_PACK[id] || [];
+                setLibrarySurahData(data);
+                setSelectedSurahForView(SURAHS.find(s => s.id === id) || {id, name: "Surah "+id, english: ""});
+                setLoading(false);
+            };
+
+            const handleFileUpload = async (e) => {
+                const files = Array.from(e.target.files);
+                let newSurahs = [];
+                for (const file of files) {
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+                        if (Array.isArray(data)) newSurahs = [...newSurahs, ...data];
+                    } catch (err) { console.error(err); }
+                }
+                if (newSurahs.length > 0) {
+                    setLocalDatabase(prev => {
+                        const merged = [...prev];
+                        newSurahs.forEach(ns => {
+                            const idx = merged.findIndex(s => s.id === ns.id);
+                            if (idx >= 0) merged[idx] = ns; else merged.push(ns);
+                        });
+                        localStorage.setItem('hifz_vault_gh_v3', JSON.stringify(merged));
+                        return merged;
+                    });
+                }
+                e.target.value = null;
+            };
+
+            if (selectedSurahForView) {
+                return (
+                    <div className="space-y-6 animate-in fade-in pb-12" onClick={() => setExpandedVerseMenu(null)}>
+                        <button onClick={() => onSelectVerse(librarySurahData[0], librarySurahData, 0, selectedSurahForView)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
+                            <LucideIcon name="play" className="w-5 h-5 fill-current"/> Start Memorizing Chapter
+                        </button>
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold dark:text-white">Surah {selectedSurahForView.name}</h2>
+                            <p className="text-stone-500 text-sm uppercase tracking-widest">{selectedSurahForView.english}</p>
+                        </div>
+                        {librarySurahData.map((v, idx) => (
+                            <div key={idx} className="p-5 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 shadow-sm relative group">
+                                <div className="absolute top-3 right-3">
+                                    <button onClick={(e) => { e.stopPropagation(); setExpandedVerseMenu(expandedVerseMenu === idx ? null : idx); }} className="p-1 text-stone-400 hover:text-stone-600 rounded-lg border dark:border-slate-700">
+                                        <LucideIcon name="more-horizontal" className="w-5 h-5" />
+                                    </button>
+                                    {expandedVerseMenu === idx && (
+                                        <div className="absolute top-8 right-0 bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-xl rounded-lg p-2 z-10 w-48 animate-in">
+                                            <button onClick={() => onSelectVerse(v, librarySurahData, idx, selectedSurahForView)} className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:bg-stone-50 dark:hover:bg-slate-700 rounded-md w-full text-left">
+                                                <LucideIcon name="target" className="w-4 h-4"/> Focus & Learn Ayah
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="absolute -left-2 -top-2 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs border dark:border-emerald-700 shadow-sm">
+                                    {v.ayah}
+                                </div>
+                                <p className="text-3xl font-naskh text-right leading-relaxed mb-4 mt-2" dir="rtl">{v.arabic}</p>
+                                <div className="p-3 bg-stone-50 dark:bg-slate-900/50 rounded-lg border dark:border-slate-700 text-[11px] text-emerald-600 dark:text-emerald-400 italic mb-3">
+                                    {v.transliteration}
+                                </div>
+                                <p className="text-sm dark:text-slate-300 mb-3 leading-snug">"{v.english}"</p>
+                                {v.tafsir && <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl text-[11px] text-stone-600 dark:text-slate-400 border border-amber-100 dark:border-amber-900/30 leading-relaxed">{v.tafsir}</div>}
+                            </div>
+                        ))}
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-4">
+                    <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
+                        <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-widest opacity-60">Vault Manager</h3>
+                        <input type="file" accept=".json" multiple ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-lg font-bold text-xs">Add Pack</button>
+                    </div>
+                    <div className="space-y-2">
+                        {SURAHS.map(s => (
+                            <div key={s.id} onClick={() => loadSurah(s.id)} className="p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 flex justify-between items-center shadow-sm hover:border-emerald-500 cursor-pointer group">
+                                <div><p className="font-bold group-hover:text-emerald-500 transition-colors">{s.id}. {s.name}</p><p className="text-xs text-stone-500">{s.english}</p></div>
+                                <div className="flex gap-2 items-center">
+                                    {(localDatabase && localDatabase.some(ls => ls.id === s.id) || OFFLINE_PACK[s.id]) && <LucideIcon name="check-circle-2" className="w-4 h-4 text-emerald-500" />}
+                                    <LucideIcon name="chevron-right" className="w-5 h-5 text-stone-300" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function Memorize({ context, setContext, memorizedAyahs, setMemorizedAyahs }) {
+            const [step, setStep] = useState(1);
+            const [reps, setReps] = useState(0);
+            const steps = [{id:1, t:"Review"}, {id:2, t:"Listen"}, {id:3, t:"Repeat"}, {id:4, t:"Test"}];
+            const target = step === 1 ? 1 : (step === 3 ? 10 : 5);
+            const isDone = step === 4 && reps >= target;
+            
+            useEffect(() => { setStep(1); setReps(0); }, [context.verse.ayah]);
+
+            const handleRep = (e) => {
+                e.stopPropagation();
+                if (reps + 1 >= target) {
+                    if (step < 4) { setStep(step + 1); setReps(0); }
+                    else setReps(target);
+                } else setReps(reps + 1);
+            };
+
+            const log = () => {
+                const key = `${context.surahInfo.id}:${context.verse.ayah}`;
+                if (!memorizedAyahs.includes(key)) {
+                    const next = [...memorizedAyahs, key];
+                    setMemorizedAyahs(next);
+                    localStorage.setItem('hifz_progress_gh_v3', JSON.stringify(next));
+                }
+                if (context.currentIndex < context.surahData.length - 1) {
+                    const nIdx = context.currentIndex + 1;
+                    setContext({...context, currentIndex: nIdx, verse: context.surahData[nIdx]});
+                }
+            };
+
+            return (
+                <div className="space-y-4 animate-in">
+                    <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
+                        <button disabled={context.currentIndex === 0} onClick={() => { const i = context.currentIndex - 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-left"/></button>
+                        <h2 className="text-sm font-bold opacity-60">Surah {context.surahInfo.name} • {context.verse.ayah}</h2>
+                        <button disabled={context.currentIndex === context.surahData.length - 1} onClick={() => { const i = context.currentIndex + 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-right"/></button>
+                    </div>
+                    <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-lg text-center relative overflow-hidden">
+                        <p className="text-4xl font-naskh leading-relaxed mb-6" dir="rtl">{context.verse.arabic}</p>
+                        <p className="text-emerald-500 italic text-sm mb-4">{context.verse.transliteration}</p>
+                        <p className="text-sm dark:text-slate-300">"{context.verse.english}"</p>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                        {steps.map(s => (
+                            <div key={s.id} className={`py-2 text-[10px] font-bold text-center rounded-lg border transition-all ${step === s.id ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-white dark:bg-slate-800 border-stone-200 dark:border-slate-700 opacity-40'}`}>
+                                {s.t}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex items-center justify-center text-2xl font-black">{reps}/{target}</div>
+                        <button onClick={handleRep} className="flex-[3] py-6 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-all text-lg">Log Repetition</button>
+                    </div>
+                    {isDone && <button onClick={log} className="w-full py-5 bg-emerald-800 text-white rounded-2xl font-bold animate-bounce shadow-2xl flex items-center justify-center gap-2 mt-4"><LucideIcon name="check-circle-2"/> Save Ayah & Next</button>}
+                </div>
+            );
+        }
+
+        function JumpModal({ onClose, onSelect, localDatabase }) {
+            const [s, setS] = useState('');
+            const [a, setA] = useState('');
+            const handle = () => {
+                const sId = parseInt(s); const aId = parseInt(a);
+                const info = SURAHS.find(item => item.id === sId) || {id: sId, name: "Surah "+sId, english: ""};
+                let vs = (localDatabase && localDatabase.find(item => item.id === sId)?.ayahs) || OFFLINE_PACK[sId];
+                if (!vs) { alert("Pack not in vault. Upload it first."); return; }
+                const target = vs.find(v => v.ayah === aId);
+                if (target) onSelect(target, vs, vs.findIndex(v => v.ayah === aId), info);
+                else alert("Ayah not found.");
+            };
+            return (
+                <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in" onClick={onClose}>
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl border dark:border-slate-700" onClick={e=>e.stopPropagation()}>
+                        <h3 className="text-xl font-bold mb-6 text-center border-b dark:border-slate-700 pb-2">Jump to Ayah</h3>
+                        <div className="space-y-4 mb-8">
+                            <div><label className="text-[10px] font-bold text-stone-500 uppercase px-2 tracking-widest">Surah Number</label><input type="number" value={s} onChange={e=>setS(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-4 outline-none border border-transparent focus:border-emerald-500" /></div>
+                            <div><label className="text-[10px] font-bold text-stone-500 uppercase px-2 tracking-widest">Ayah Number</label><input type="number" value={a} onChange={e=>setA(e.target.value)} className="w-full mt-1 bg-stone-100 dark:bg-slate-900 rounded-xl p-4 outline-none border border-transparent focus:border-emerald-500" /></div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-4 font-bold bg-stone-100 dark:bg-slate-700 rounded-xl">Cancel</button>
+                            <button onClick={handle} className="flex-1 py-4 font-bold bg-emerald-600 text-white rounded-xl">Teleport</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function LowEnergyModal({ context, onClose }) {
+            const [t, setT] = useState(300);
+            const [active, setActive] = useState(false);
+            useEffect(() => { let i; if(active && t > 0) i = setInterval(() => setT(v => v - 1), 1000); return () => clearInterval(i); }, [active, t]);
+            return (
+                <div className="fixed inset-x-0 bottom-0 z-[60] animate-in">
+                    <div className="absolute inset-0 bg-black/50 -top-[100vh] backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="bg-slate-950 p-6 rounded-t-3xl border-t border-slate-800 relative shadow-2xl">
+                        <div className="flex justify-between items-center mb-6">
+                            <div><h2 className="text-2xl font-bold uppercase tracking-widest">Low Energy</h2><p className="text-stone-500 text-[10px] uppercase tracking-widest">Focusing: {context?.surahInfo?.name}</p></div>
+                            <button onClick={onClose} className="p-2 bg-slate-900 rounded-full"><LucideIcon name="chevron-down"/></button>
+                        </div>
+                        <div className="bg-slate-900 p-8 rounded-2xl mb-6 flex justify-between items-center shadow-inner">
+                            <div className="text-5xl font-mono font-bold text-amber-400">{Math.floor(t/60)}:{(t%60).toString().padStart(2,'0')}</div>
+                            <button onClick={() => setActive(!active)} className="w-16 h-16 bg-amber-600 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">{active ? <LucideIcon name="pause" /> : <LucideIcon name="play" />}</button>
+                        </div>
+                        <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800"><p className="text-3xl font-naskh text-center leading-loose" dir="rtl">{context?.verse?.arabic}</p></div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
