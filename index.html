@@ -13,14 +13,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+        body { background-color: #0f172a; color: #f8fafc; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         .font-naskh { font-family: 'Amiri', serif; line-height: 2.2; }
         .animate-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        button:active { transform: scale(0.96); }
+        button:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -29,9 +29,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
-        // Icon component that ensures Lucide icons render correctly
+        // Robust Icon helper
         const LucideIcon = ({ name, className = "w-6 h-6" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
             return <i data-lucide={name} className={className}></i>;
         };
 
@@ -82,7 +82,7 @@
                 { ayah: 1, arabic: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Bismillaahir Rahmaanir Raheem", english: "In the name of Allah, the Entirely Merciful, the Especially Merciful.", tafsir: "Invoke His mercy. This journey is fueled by His grace." },
                 { ayah: 2, arabic: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", transliteration: "Alhamdu lillaahi Rabbil 'aalameen", english: "[All] praise is [due] to Allah, Lord of the worlds -", tafsir: "Gratitude for the past and present." },
                 { ayah: 3, arabic: "الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Ar-Rahmaanir-Raheem", english: "The Entirely Merciful, the Especially Merciful,", tafsir: "Repeated for emphasis." },
-                { ayah: 4, arabic: "مَالِكِ يَوْمِ الدِّينِ", transliteration: "Maaliki Yawmid-Deen", english: "Sovereign of the Day of Recompense.", tafsir: "Ultimate accountability." },
+                { ayah: 4, arabic: "مَالِكِ يَوْمِ الدِّينِ", transliteration: "Maaliki Yawmid-Deen", english: "Sovereign of the Day of Recompense.", tafsir: "Accountability and ultimate sovereignty." },
                 { ayah: 5, arabic: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", transliteration: "Iyyaaka na'budu wa lyyaaka nasta'een", english: "It is You we worship and You we ask for help.", tafsir: "Total dependence." },
                 { ayah: 6, arabic: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", transliteration: "Ihdinas-Siraatal-Mustaqeem", english: "Guide us to the straight path -", tafsir: "Daily requirement for direction." },
                 { ayah: 7, arabic: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", transliteration: "Siraatal-lazeena an'amta 'alaihim ghayril-maghdoobi 'alaihim wa lad-daaalleen", english: "The path of those upon whom You have bestowed favor...", tafsir: "The path of the Prophets." }
@@ -97,6 +97,7 @@
             const [memorizedAyahs, setMemorizedAyahs] = useState([]);
             const [selectedSurahForView, setSelectedSurahForView] = useState(null);
             const [librarySurahData, setLibrarySurahData] = useState([]);
+            const [isLibraryLoading, setIsLibraryLoading] = useState(false);
             const [isJumpModalOpen, setIsJumpModalOpen] = useState(false);
             const [isLowEnergyOpen, setIsLowEnergyOpen] = useState(false);
             const [learningContext, setLearningContext] = useState({ 
@@ -104,9 +105,9 @@
             });
 
             useEffect(() => {
-                const savedVault = localStorage.getItem('hifz_vault_gh_v4');
+                const savedVault = localStorage.getItem('hifz_vault_gh_v5');
                 if (savedVault) setLocalDatabase(JSON.parse(savedVault));
-                const savedProgress = localStorage.getItem('hifz_progress_gh_v4');
+                const savedProgress = localStorage.getItem('hifz_progress_gh_v5');
                 if (savedProgress) setMemorizedAyahs(JSON.parse(savedProgress));
             }, []);
 
@@ -141,6 +142,8 @@
                                 setSelectedSurahForView={setSelectedSurahForView}
                                 librarySurahData={librarySurahData}
                                 setLibrarySurahData={setLibrarySurahData}
+                                loading={isLibraryLoading}
+                                setLoading={setIsLibraryLoading}
                                 onSelectVerse={handleSelectVerse}
                             />}
                             {activeTab === 'memorize' && <Memorize context={learningContext} setContext={setLearningContext} memorizedAyahs={memorizedAyahs} setMemorizedAyahs={setMemorizedAyahs}/>}
@@ -148,40 +151,40 @@
 
                         {/* NAV BACK BUTTON */}
                         {(activeTab === 'qaida' || (activeTab === 'explorer' && selectedSurahForView) || activeTab === 'memorize') && (
-                            <button onClick={handleSmartBack} className="fixed bottom-24 left-4 p-4 bg-stone-800 text-white rounded-full shadow-lg border border-stone-700 z-50">
+                            <button onClick={handleSmartBack} className="fixed bottom-24 left-4 p-4 bg-stone-800 text-white rounded-full shadow-lg border border-stone-700 z-40 transition-transform active:scale-90">
                                 <LucideIcon name="arrow-left" />
                             </button>
                         )}
 
-                        {/* EXPANDING FAB BACKDROP */}
+                        {/* EXPANDING FAB BACKDROP - CLOSES MENU WITHOUT INTERCEPTING CLICKS WHEN CLOSED */}
                         {isFabOpen && <div className="fixed inset-0 bg-black/40 z-40 animate-in" onClick={() => setIsFabOpen(false)}></div>}
 
                         {/* EXPANDING FAB */}
                         <div className="fixed bottom-24 right-4 flex flex-col items-end gap-3 z-50">
                             {isFabOpen && (
-                                <div className="flex flex-col items-end gap-3 mb-2">
+                                <div className="flex flex-col items-end gap-3 mb-2 animate-in">
                                     <FabActionItem icon="battery-low" label="Low Energy" color="text-amber-500" onClick={() => { setIsLowEnergyOpen(true); setIsFabOpen(false); }} />
                                     <FabActionItem icon="search" label="Teleport" color="text-blue-400" onClick={() => { setIsJumpModalOpen(true); setIsFabOpen(false); }} />
                                     <FabActionItem icon="type" label="Basics" color="text-emerald-500" onClick={() => { setActiveTab('qaida'); setIsFabOpen(false); }} />
                                     <FabActionItem icon={theme === 'dark' ? "sun" : "moon"} label="Theme" color="text-slate-400" onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setIsFabOpen(false); }} />
                                 </div>
                             )}
-                            <button onClick={() => setIsFabOpen(!isFabOpen)} className="p-4 bg-emerald-600 text-white rounded-full shadow-2xl border border-emerald-500 transition-transform">
+                            <button onClick={() => setIsFabOpen(!isFabOpen)} className="p-4 bg-emerald-600 text-white rounded-full shadow-2xl border border-emerald-500 transition-all hover:bg-emerald-500">
                                 <LucideIcon name={isFabOpen ? "x" : "menu"} />
                             </button>
                         </div>
 
                         <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-950 border-t border-stone-200 dark:border-slate-800 flex justify-around items-center h-16 z-40">
-                            <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 ${activeTab === 'dashboard' ? 'text-emerald-500' : 'text-stone-400'}`}>
-                                <LucideIcon name="home" />
+                            <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'dashboard' ? 'text-emerald-500' : 'text-stone-400'}`}>
+                                <LucideIcon name="home" className="w-5 h-5" />
                                 <span className="text-[10px] font-bold uppercase">Home</span>
                             </button>
-                            <button onClick={() => { setActiveTab('explorer'); setSelectedSurahForView(null); }} className={`flex flex-col items-center gap-1 ${activeTab === 'explorer' ? 'text-emerald-500' : 'text-stone-400'}`}>
-                                <LucideIcon name="book" />
+                            <button onClick={() => { setActiveTab('explorer'); setSelectedSurahForView(null); }} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'explorer' ? 'text-emerald-500' : 'text-stone-400'}`}>
+                                <LucideIcon name="book" className="w-5 h-5" />
                                 <span className="text-[10px] font-bold uppercase">Library</span>
                             </button>
-                            <button onClick={() => setActiveTab('memorize')} className={`flex flex-col items-center gap-1 ${activeTab === 'memorize' ? 'text-emerald-500' : 'text-stone-400'}`}>
-                                <LucideIcon name="target" />
+                            <button onClick={() => setActiveTab('memorize')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'memorize' ? 'text-emerald-500' : 'text-stone-400'}`}>
+                                <LucideIcon name="target" className="w-5 h-5" />
                                 <span className="text-[10px] font-bold uppercase">Learn</span>
                             </button>
                         </nav>
@@ -197,7 +200,7 @@
             return (
                 <button onClick={onClick} className="flex items-center gap-3 group">
                     <span className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-md border dark:border-slate-700 uppercase tracking-tighter">{label}</span>
-                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border dark:border-slate-700 transition-colors group-hover:border-emerald-500">
+                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center border dark:border-slate-700 transition-all group-hover:border-emerald-500">
                         <LucideIcon name={icon} className={`w-5 h-5 ${color}`} />
                     </div>
                 </button>
@@ -254,7 +257,7 @@
                 if (source === 'cloud') {
                     const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodeURIComponent(txt)}`);
                     if (gender === 'male') {
-                        audio.playbackRate = 0.9;
+                        audio.playbackRate = 1.0;
                         if ('preservesPitch' in audio) audio.preservesPitch = false;
                     }
                     audio.onended = () => setPlayingId(null);
@@ -290,24 +293,24 @@
             return (
                 <div className="space-y-6 animate-in slide-in-from-right">
                     <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border dark:border-slate-700 shadow-sm">
-                        <button onClick={() => setSection('letters')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${section === 'letters' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Alphabet</button>
-                        <button onClick={() => setSection('words')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${section === 'words' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Words</button>
-                        <button onClick={() => setSection('rules')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${section === 'rules' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Rules</button>
+                        <button onClick={() => setSection('letters')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${section === 'letters' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Alphabet</button>
+                        <button onClick={() => setSection('words')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${section === 'words' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Words</button>
+                        <button onClick={() => setSection('rules')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${section === 'rules' ? 'bg-emerald-600 text-white shadow-md' : ''}`}>Rules</button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
-                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-widest">Voice</p>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase text-center tracking-widest">Voice</p>
                             <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
-                                <button onClick={() => setGender('male')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${gender === 'male' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Male</button>
-                                <button onClick={() => setGender('female')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${gender === 'female' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Female</button>
+                                <button onClick={() => setGender('male')} className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${gender === 'male' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Male</button>
+                                <button onClick={() => setGender('female')} className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${gender === 'female' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Female</button>
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
-                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-widest">Source</p>
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700">
+                            <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase text-center tracking-widest">Source</p>
                             <div className="flex bg-stone-100 dark:bg-slate-900 p-1 rounded-lg">
-                                <button onClick={() => setSource('local')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${source === 'local' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Local</button>
-                                <button onClick={() => setSource('cloud')} className={`flex-1 py-1 text-[10px] font-bold rounded-md ${source === 'cloud' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Cloud</button>
+                                <button onClick={() => setSource('local')} className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${source === 'local' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Local</button>
+                                <button onClick={() => setSource('cloud')} className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-all ${source === 'cloud' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-stone-400'}`}>Cloud</button>
                             </div>
                         </div>
                     </div>
@@ -315,7 +318,7 @@
                     {section === 'letters' && (
                         <div className="grid grid-cols-3 gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 shadow-sm">
                             {FULL_ALPHABET.map((item, i) => (
-                                <button key={i} onClick={() => playAudio(item.letter, i)} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all ${playingId === i ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
+                                <button key={i} onClick={() => playAudio(item.letter, i)} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all ${playingId === i ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600 scale-95' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700'}`}>
                                     <span className="text-4xl font-naskh mb-1">{item.letter}</span>
                                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">{item.name}</span>
                                 </button>
@@ -327,12 +330,12 @@
                         <div className="space-y-4">
                             <div className="flex bg-white dark:bg-slate-800 p-1 rounded-xl border dark:border-slate-700 shadow-sm">
                                 {['short', 'medium', 'long', 'mixed'].map(lv => (
-                                    <button key={lv} onClick={() => setLen(lv)} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg capitalize ${len === lv ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-400'}`}>{lv}</button>
+                                    <button key={lv} onClick={() => setLen(lv)} className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg capitalize transition-all ${len === lv ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-400'}`}>{lv}</button>
                                 ))}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 {dynamicWords.map((w, i) => (
-                                    <button key={i} onClick={() => playAudio(w, `w${i}`)} className={`py-8 rounded-2xl border flex items-center justify-center transition-all ${playingId === `w${i}` ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600' : 'bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm'}`}>
+                                    <button key={i} onClick={() => playAudio(w, `w${i}`)} className={`py-8 rounded-2xl border flex items-center justify-center transition-all ${playingId === `w${i}` ? 'bg-amber-100 border-amber-400 dark:bg-amber-900 text-amber-600 scale-95' : 'bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm'}`}>
                                         <span className="text-4xl font-naskh">{w}</span>
                                     </button>
                                 ))}
@@ -345,7 +348,7 @@
                             {[{t:"Fatha (ـَ)", e:"بَ"}, {t:"Kasra (ـِ)", e:"بِ"}, {t:"Damma (ـُ)", e:"بُ"}, {t:"Sukun (ـْ)", e:"بْ"}].map((r, i) => (
                                 <div key={i} className="p-4 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
                                     <span className="font-bold text-sm">{r.t}</span>
-                                    <button onClick={() => playAudio(r.e, `r${i}`)} className={`w-14 h-14 rounded-lg border flex items-center justify-center text-3xl font-naskh transition-all ${playingId === `r${i}` ? 'bg-emerald-100 border-emerald-500 text-emerald-600' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700 shadow-sm'}`}>{r.e}</button>
+                                    <button onClick={() => playAudio(r.e, `r${i}`)} className={`w-14 h-14 rounded-lg border flex items-center justify-center text-3xl font-naskh transition-all ${playingId === `r${i}` ? 'bg-emerald-100 border-emerald-500 text-emerald-600 scale-95' : 'bg-stone-50 dark:bg-slate-900 dark:border-slate-700 shadow-sm'}`}>{r.e}</button>
                                 </div>
                             ))}
                         </div>
@@ -378,12 +381,12 @@
                 }
                 if (newSurahs.length > 0) {
                     setLocalDatabase(prev => {
-                        const merged = [...prev];
+                        const merged = [...(prev || [])];
                         newSurahs.forEach(ns => {
                             const idx = merged.findIndex(s => s.id === ns.id);
                             if (idx >= 0) merged[idx] = ns; else merged.push(ns);
                         });
-                        localStorage.setItem('hifz_vault_gh_v4', JSON.stringify(merged));
+                        localStorage.setItem('hifz_vault_gh_v5', JSON.stringify(merged));
                         return merged;
                     });
                 }
@@ -434,7 +437,7 @@
                     <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
                         <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-widest opacity-60">Vault Manager</h3>
                         <input type="file" accept=".json" multiple ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-lg font-bold text-xs transition-colors hover:bg-emerald-900/60">Add Pack</button>
+                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-lg font-bold text-xs transition-all hover:bg-emerald-900/60">Add Pack</button>
                     </div>
                     <div className="space-y-2">
                         {SURAHS.map(s => (
@@ -461,20 +464,19 @@
             useEffect(() => { setStep(1); setReps(0); }, [context.verse.ayah]);
 
             const handleRep = (e) => {
-                e.stopPropagation(); // Stop bubbling to prevent app-level menu interference
                 if (reps + 1 >= target) {
                     if (step < 4) { setStep(step + 1); setReps(0); }
                     else setReps(target);
                 } else setReps(reps + 1);
             };
 
-            const log = (e) => {
-                e.stopPropagation();
+            const log = () => {
                 const key = `${context.surahInfo.id}:${context.verse.ayah}`;
-                if (!memorizedAyahs.includes(key)) {
-                    const next = [...memorizedAyahs, key];
+                const safeAyahs = Array.isArray(memorizedAyahs) ? memorizedAyahs : [];
+                if (!safeAyahs.includes(key)) {
+                    const next = [...safeAyahs, key];
                     setMemorizedAyahs(next);
-                    localStorage.setItem('hifz_progress_gh_v4', JSON.stringify(next));
+                    localStorage.setItem('hifz_progress_gh_v5', JSON.stringify(next));
                 }
                 if (context.currentIndex < context.surahData.length - 1) {
                     const nIdx = context.currentIndex + 1;
@@ -485,9 +487,9 @@
             return (
                 <div className="space-y-4 animate-in">
                     <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
-                        <button disabled={context.currentIndex === 0} onClick={(e) => { e.stopPropagation(); const i = context.currentIndex - 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-left"/></button>
+                        <button disabled={context.currentIndex === 0} onClick={() => { const i = context.currentIndex - 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-left"/></button>
                         <h2 className="text-sm font-bold opacity-60">Surah {context.surahInfo.name} • {context.verse.ayah}</h2>
-                        <button disabled={context.currentIndex === context.surahData.length - 1} onClick={(e) => { e.stopPropagation(); const i = context.currentIndex + 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-right"/></button>
+                        <button disabled={context.currentIndex === context.surahData.length - 1} onClick={() => { const i = context.currentIndex + 1; setContext({...context, currentIndex: i, verse: context.surahData[i]}) }} className="p-2 text-stone-400 disabled:opacity-20"><LucideIcon name="chevron-right"/></button>
                     </div>
                     <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-lg text-center relative overflow-hidden">
                         <p className="text-4xl font-naskh leading-relaxed mb-6" dir="rtl">{context.verse.arabic}</p>
@@ -496,7 +498,7 @@
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                         {steps.map(s => (
-                            <div key={s.id} className={`py-2 text-[10px] font-bold text-center rounded-lg border transition-all ${step === s.id ? 'bg-emerald-600 text-white border-emerald-500 shadow-md scale-105' : 'bg-white dark:bg-slate-800 border-stone-200 dark:border-slate-700 opacity-40'}`}>
+                            <div key={s.id} className={`py-2 text-[10px] font-bold text-center rounded-lg border transition-all ${step === s.id ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-white dark:bg-slate-800 border-stone-200 dark:border-slate-700 opacity-40'}`}>
                                 {s.t}
                             </div>
                         ))}
@@ -516,7 +518,8 @@
             const handle = () => {
                 const sId = parseInt(s); const aId = parseInt(a);
                 const info = SURAHS.find(item => item.id === sId) || {id: sId, name: "Surah "+sId, english: ""};
-                let vs = (localDatabase && localDatabase.find(item => item.id === sId)?.ayahs) || OFFLINE_PACK[sId];
+                const vault = Array.isArray(localDatabase) ? localDatabase : [];
+                let vs = vault.find(item => item.id === sId)?.ayahs || OFFLINE_PACK[sId];
                 if (!vs) { alert("Pack not in vault. Upload it first."); return; }
                 const target = vs.find(v => v.ayah === aId);
                 if (target) onSelect(target, vs, vs.findIndex(v => v.ayah === aId), info);
